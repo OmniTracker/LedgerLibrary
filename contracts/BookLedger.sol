@@ -9,11 +9,20 @@ contract BookLedger is ERC721 {
   string public constant contractName = 'BookLedger'; // For testing.
 
   event ledgerCreated(address book);
+  event bookRemoved();
+  event bookAdded(string publisher, string author, string name );
 
   struct Book {
-    uint256 timeOfBirth;
+    uint256 timeOfOrigin;
+    uint256 timeOfRental;
+    uint256 genre;
+    string country;
+    string publisher;
+    string author;
     string name;
   }
+
+  Book[] internal _books;
 
   address public _minter;
   uint256 public _startBalance;
@@ -23,16 +32,19 @@ contract BookLedger is ERC721 {
 
   constructor(
     address minter,
-    uint256 startBalance,
-    uint256 rentalInterval
+    uint256 startBalance
   ) public {
       _minter = minter;
       _startBalance = startBalance;
-      _rentalInterval = rentalInterval;
   }
 
   modifier onlyMinter() {
     require(msg.sender == _minter, "msg.sender is not _minter.");
+    _;
+  }
+
+  modifier exists(uint256 bookID) {
+    require(_exists(bookID), "Bear with specified ID does not exist.");
     _;
   }
 
@@ -43,16 +55,43 @@ contract BookLedger is ERC721 {
   }
 
   /**
-   * Set minter of book into library
+   * Mint new book to library
    */
+
+   function newBook ( address owner,
+                      uint256 timeOfRental,
+                      uint256 genre,
+                      string country,
+                      string publisher,
+                      string author,
+                      string name )
+      public onlyMinter returns(uint256)
+   {
+     Book memory book = Book({
+       timeOfOrigin: now,
+       timeOfRental: 0,
+       genre: genre,
+       country: country,
+       publisher: publisher,
+       author: author,
+       name: name
+     });
+
+     uint256 bookID = _books.push(book) - 1;
+     /* Mint new book to the library */
+     _mint(owner, bookID);
+
+     emit bookAdded(_books[bookID].publisher, _books[bookID].author, _books[bookID].name );
+     return bookID;
+   }
 
 
    /**
     * Get origin date of book being placed in library.
     */
 
-    function originDateOfBook (uint256 bookID )
-      external exists(bearID) view returns(uint256)
+    function originDateOfBook ( uint256 bookID )
+      external exists(bookID) view returns(uint256)
     {
 
     }
@@ -61,7 +100,7 @@ contract BookLedger is ERC721 {
     * Get number of books in Library
     */
     function numberOfBookInLibraray () public view returns(uint256) {
-
+      return _books.length;
     }
 
    /**
@@ -104,7 +143,7 @@ contract BookLedger is ERC721 {
    * Get date of book removal from library
    */
    function getDateOfBookRemoval( uint256 bookID )
-      external exists( bookID ) view return(uint256)
+      external exists(bookID) view returns(uint256)
     {
 
     }
@@ -113,7 +152,7 @@ contract BookLedger is ERC721 {
     * Get date when book needs to be submitted back to library
     */
     function returnTimeOfBook ( uint256 bookID )
-      external exists( bookID ) view return(uint256)
+      external exists(bookID) view returns(uint256)
     {
 
     }
