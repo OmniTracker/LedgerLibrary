@@ -9,7 +9,7 @@ const zero40 = utils.zero40
 const pause = utils.pause
 
 const startBalance = 100
-//const feedingCost = 20
+const rentalInterval = 200
 //const feedingInterval = 3000 // 1000ms == 1sec
 //const genes = 0
 //const name = 'Bruno'
@@ -23,6 +23,54 @@ contract('ERC721MinimalTests', async function (accounts) {
   })
 
   it('should have correct initial state', async function () {
+    await checkState([bookLedger], [[]], accounts)
+  })
+
+  it('should check add book', async function () {
+    await checkState([bookLedger], [[]], accounts)
+  })
+
+  it('should remove book', async function () {
+    await checkState([bookLedger], [[]], accounts)
+  })
+
+  it('should commit to book removal', async function () {
+    await checkState([bookLedger], [[]], accounts)
+  })
+
+  it('should check if book availability after removal', async function () {
+    await checkState([bookLedger], [[]], accounts)
+  })
+
+  it('should add book then check if number of books', async function () {
+    await checkState([bookLedger], [[]], accounts)
+  })
+
+  it('should renew book', async function () {
+    await checkState([bookLedger], [[]], accounts)
+  })
+
+  it('should fail to double remove book', async function () {
+    await checkState([bookLedger], [[]], accounts)
+  })
+
+  it('should fail to double place book', async function () {
+    await checkState([bookLedger], [[]], accounts)
+  })
+
+  it('should fail to double commit book', async function () {
+    await checkState([bookLedger], [[]], accounts)
+  })
+
+  it('should remove book, place book back, then check availability', async function () {
+    await checkState([bookLedger], [[]], accounts)
+  })
+
+  it('should add book then remove book completely from library', async function () {
+    await checkState([bookLedger], [[]], accounts)
+  })
+
+  it('should fail to remove book if book doesnt exist', async function () {
     await checkState([bookLedger], [[]], accounts)
   })
 
