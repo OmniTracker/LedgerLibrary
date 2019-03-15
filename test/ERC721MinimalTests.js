@@ -3,6 +3,7 @@ const BigNumber = require('bignumber.js')
 
 //const CryptoBears = utils.CryptoBears
 const BookLedger = utils.BookLedger
+const generateHash = utils.generateHash
 const checkState = utils.checkState
 const checkEvent = utils.checkEvent
 const zero40 = utils.zero40
@@ -27,7 +28,29 @@ contract('ERC721MinimalTests', async function (accounts) {
   })
 
   it('should check add book', async function () {
+    assert.equal(await bookLedger.numberOfBookInLibraray(), 0)
+    let bookID_1 = (await bookLedger.newBook.call(accounts[0],
+                                                0,
+                                                0,
+                                                'Canada',
+                                                'Blueno',
+                                                'Jane Doe',
+                                                'Living Fiction',{from: accounts[5]} )).toNumber()
+
+    assert.equal(bookID_1, 0)
+
+    let bookID_2 = (await bookLedger.newBook.call(accounts[0],
+                                                0,
+                                                0,
+                                                'USA',
+                                                'Blueno',
+                                                'John Doe',
+                                                'Earth',{from: accounts[5]} )).toNumber()
+
+    assert.equal(bookID_2, 1)
+
     await checkState([bookLedger], [[]], accounts)
+
   })
 
   it('should remove book', async function () {
