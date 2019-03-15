@@ -9,7 +9,7 @@ contract BookLedger is ERC721 {
   string public constant contractName = 'BookLedger'; // For testing.
 
   event ledgerCreated(address book);
-  
+
   struct Bear {
     uint256 timeOfBirth;
     uint256 genes;
@@ -203,7 +203,7 @@ contract BookLedger is ERC721 {
           // should flip coin and pay winner once both bears reveal
           // should payWinner for same-bear-bet without changing balance
       // not including this results in failed test
-      // 
+      //
       require( msg.sender == ownerOf(bearID) );
       require( amount >= _feedingCost );
       require( _BearBucksContract.balanceOf(ownerOf(bearID)) > amount);
@@ -211,11 +211,11 @@ contract BookLedger is ERC721 {
       uint256 mealsNeeded = getMealsNeeded(bearID);
       require(mealsNeeded > 0);
       emit viewFed(bearID, mealsNeeded, amount);
-      
+
       if(mealsNeeded > 0) {
 	  uint256 mealsFed = amount.div(_feedingCost);
       }
-      
+
       if(mealsFed > mealsNeeded) {
 	  mealsFed = mealsNeeded;
       }
@@ -230,9 +230,9 @@ contract BookLedger is ERC721 {
       _BearBucksContract.burn(ownerOf(bearID), amountFed);
       //emit viewBearBalance(_BearBucksContract.balanceOf(ownerOf(bearID)), _BearBucksContract.betSum(ownerOf(bearID)));
       //emit viewFed(bearID, mealsFed, amountFed);
-      
+
       bear.timeLastFed = bear.timeLastFed.add(mealsFed.mul(_feedingInterval));
-      
+
       emit bearFed(bearID, bear.timeLastFed);
 
   }
@@ -249,27 +249,27 @@ contract BookLedger is ERC721 {
 
     /*TODO*/
       address owner = ownerOf(bearID);
-      
-      // this require necessary? 
+
+      // this require necessary?
       require(ownerOf(opponentID)  != address(0));
 
       // require bet to be greater than feeding cost
       require( amount >= _feedingCost);
-      
+
       // should a bet be placed after its been committed?
       //bool bearIDCommitted = _committed[bearID][opponentID];
       //bool opponentIDCommitted = _committed[opponentID][bearID];
       //emit viewCommitted(bearIDCommitted, opponentIDCommitted);
       // should a check of allowance (who is one being allowed to placeBet?
       //emit viewAllowance(owner, msg.sender, amount);
-      
+
       //emit viewBearBalance(_BearBucksContract.balanceOf(owner), _bets[bearID][opponentID].add(amount));
-      
+
       _BearBucksContract.placeBet(owner, amount);
       _bets[bearID][opponentID] = amount;
-      
+
       emit betPlaced(bearID, opponentID, amount);
-  
+
   }
 
   /**
@@ -304,7 +304,7 @@ contract BookLedger is ERC721 {
 
       _BearBucksContract.removeBet(ownerOf(bearID), _bets[bearID][opponentID]);
       _bets[bearID][opponentID] = 0;
-      
+
       emit betRemoved(bearID, opponentID);
 
   }
@@ -318,18 +318,18 @@ contract BookLedger is ERC721 {
   function commit(uint256 bearID, uint256 opponentID, bytes32 hash_r) public {
 
     /*TODO*/
-      
+
       require( msg.sender == ownerOf(bearID) );
       require( _bets[bearID][opponentID] > 0 && _bets[opponentID][bearID] > 0 );
       require( _committed[bearID][opponentID] == false );
-      
+
       _commitments[bearID][opponentID] = hash_r;
       _committed[bearID][opponentID] = true;
       emit viewCommitted(_committed[bearID][opponentID], _committed[opponentID][bearID]);
-      
+
       if( _committed[bearID][opponentID] == true && _committed[opponentID][bearID]) {
 	  emit bothCommitted();
-	  emit bearIDs(msg.sender, ownerOf(bearID), ownerOf(opponentID));	  
+	  emit bearIDs(msg.sender, ownerOf(bearID), ownerOf(opponentID));
       }
   }
 
@@ -357,7 +357,7 @@ contract BookLedger is ERC721 {
       bytes32 preimage_r = keccak256(abi.encodePacked(r));
       require( preimage_r == _commitments[bearID][opponentID] );
       emit viewRevealedHashes(_commitments[bearID][opponentID], preimage_r);
-      
+
       _secrets[bearID][opponentID] = r;
       _revealed[bearID][opponentID] = true;
 
@@ -401,7 +401,7 @@ contract BookLedger is ERC721 {
   function payWinner(uint256 winner, uint256 loser) private {
 
     /*TODO*/
-      
+
       _BearBucksContract.transferFrom(ownerOf(loser), ownerOf(winner), _bets[loser][winner]);
 
       emit calledPayWinner();
@@ -409,18 +409,18 @@ contract BookLedger is ERC721 {
       // clear before removeBet to not trigger revert()
       _committed[winner][loser] = false;
       _committed[loser][winner] = false;
-      
+
       _commitments[winner][loser] = "";
       _commitments[loser][winner] = "";
-      
+
       _secrets[winner][loser] = 0;
       _secrets[loser][winner] = 0;
-      
+
       _revealed[winner][loser] = false;
       _revealed[loser][winner] = false;
-      
+
       if(winner == loser) {
-	  removeBet(winner, loser);	  
+	  removeBet(winner, loser);
       } else {
 	  removeBet(winner, loser);
 	  removeBet(loser, winner);
