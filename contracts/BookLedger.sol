@@ -108,9 +108,9 @@ contract BookLedger is ERC721 {
    /**
     * Get the availability of book from library.
     */
-    function isBookAvailable() public view returns(bool)
+    function isBookAvailable( uint256 bookID ) public exists(bookID) view returns(bool)
     {
-
+      return _books[bookID].availability;
     }
 
   /**
@@ -125,20 +125,23 @@ contract BookLedger is ERC721 {
    * @param bookID The unique ID of the book in the library.
    */
    function removeBook( uint256 bookID ) exists(bookID) public {
+     require( isBookAvailable( bookID ) );
      Book storage book = _books[bookID];
-
      // Commit to taking the book out the Library
      commitBookRemoval(bookID);
-
+     // Set the book as unavailable
+     book.availability = false;
+     // Set the time of rental
+     book.timeOfRental = now;
      emit bookRemoved( book.publisher, book.author, book.name );
    }
 
  /**
   * Place book back into the library
   */
-  function placeBook( uint256 bookID ) exists(bookID) public {
+  function returnBook( uint256 bookID ) exists(bookID) public {
 
-    }
+  }
 
   /**
    * Renew library book subscribtion
