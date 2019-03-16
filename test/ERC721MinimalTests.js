@@ -28,20 +28,45 @@ contract('ERC721MinimalTests', async function (accounts) {
   })
 
   it('should check add book', async function () {
-    assert.equal(await bookLedger.numberOfBookInLibraray(), 0)
-    let bookID_1 = (await bookLedger.newBook.call(accounts[0],0,0,'Canada','Blueno','Jane Doe','Living Fiction',{from: accounts[5]} )).toNumber()
-    assert.equal(bookID_1, 0)
-    await bookLedger.newBook(accounts[0],0,0,'Canada','Blueno','Jane Doe','Living Fiction',{from: accounts[5]} )
-    assert.equal(await bookLedger.numberOfBookInLibraray(), 1)
-    let bookID_2 = (await bookLedger.newBook.call(accounts[0],0,0,'USA','Watson','John Doe','Bears on Ice',{from: accounts[5]} )).toNumber()
-    assert.equal(bookID_2, 1)
-    await bookLedger.newBook(accounts[0],0,0,'USA','Watson','John Doe','Bears on Ice',{from: accounts[5]} )
-    assert.equal(await bookLedger.numberOfBookInLibraray(), 2)
-    await checkState([bookLedger], [[]], accounts)
 
+    // Add first book
+    assert.equal(await bookLedger.numberOfBookInLibraray(), 0)
+    let bookID_1 = (await bookLedger.newBook.call(accounts[0],0,'Canada','Blueno','Jane Doe','Living Fiction',{from: accounts[5]} )).toNumber()
+    assert.equal(bookID_1, 0)
+    await bookLedger.newBook(accounts[0],0,'Canada','Blueno','Jane Doe','Living Fiction',{from: accounts[5]} )
+    assert.equal(await bookLedger.numberOfBookInLibraray(), 1)
+
+    // Add second book
+    let bookID_2 = (await bookLedger.newBook.call(accounts[0],0,'USA','Watson','John Doe','Bears on Ice',{from: accounts[5]} )).toNumber()
+    assert.equal(bookID_2, 1)
+    await bookLedger.newBook(accounts[0],0,'USA','Watson','John Doe','Bears on Ice',{from: accounts[5]} )
+    assert.equal(await bookLedger.numberOfBookInLibraray(), 2)
+
+    // Check state after done
+    await checkState([bookLedger], [[]], accounts)
   })
 
   it('should remove book', async function () {
+
+    // Add first book
+    assert.equal(await bookLedger.numberOfBookInLibraray(), 0)
+    let bookID_1 = (await bookLedger.newBook.call(accounts[0],0,'Canada','Blueno','Jane Doe','Living Fiction',{from: accounts[5]} )).toNumber()
+    assert.equal(bookID_1, 0)
+    await bookLedger.newBook(accounts[0],0,'Canada','Blueno','Jane Doe','Living Fiction',{from: accounts[5]} )
+    assert.equal(await bookLedger.numberOfBookInLibraray(), 1)
+
+    // Add second book
+    let bookID_2 = (await bookLedger.newBook.call(accounts[0],0,'USA','Watson','John Doe','Bears on Ice',{from: accounts[5]} )).toNumber()
+    assert.equal(bookID_2, 1)
+    await bookLedger.newBook(accounts[0],0,'USA','Watson','John Doe','Bears on Ice',{from: accounts[5]} )
+    assert.equal(await bookLedger.numberOfBookInLibraray(), 2)
+
+    // Remove first book
+    let event = await bookLedger.removeBook(bookID_1, {from: accounts[5]})
+
+    assert.equal(await bookLedger.numberOfBookInLibraray(), 2)
+
+
     await checkState([bookLedger], [[]], accounts)
   })
 

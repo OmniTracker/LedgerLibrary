@@ -11,10 +11,12 @@ contract BookLedger is ERC721 {
   event ledgerCreated(address book);
   event bookRemoved();
   event bookAdded(string publisher, string author, string name );
+  event bookRemoved(string publisher, string author, string name );
 
   struct Book {
     uint256 timeOfOrigin;
     uint256 timeOfRental;
+    bool availability;
     uint256 genre;
     string country;
     string publisher;
@@ -59,7 +61,6 @@ contract BookLedger is ERC721 {
    */
 
    function newBook ( address owner,
-                      uint256 timeOfRental,
                       uint256 genre,
                       string country,
                       string publisher,
@@ -70,6 +71,7 @@ contract BookLedger is ERC721 {
      Book memory book = Book({
        timeOfOrigin: now,
        timeOfRental: 0,
+       availability: true,
        genre: genre,
        country: country,
        publisher: publisher,
@@ -114,28 +116,34 @@ contract BookLedger is ERC721 {
   /**
    * Commit to removing book from the library ledger
    */
-   function commitBookRemoval ( uint256 bookID ) public {
+   function commitBookRemoval ( uint256 bookID ) exists(bookID) public {
 
    }
 
   /**
    * Remove book from the library
+   * @param bookID The unique ID of the book in the library.
    */
-   function removeBook( uint256 bookID ) public {
+   function removeBook( uint256 bookID ) exists(bookID) public {
+     Book storage book = _books[bookID];
 
+     // Commit to taking the book out the Library
+     commitBookRemoval(bookID);
+
+     emit bookRemoved( book.publisher, book.author, book.name );
    }
 
  /**
   * Place book back into the library
   */
-  function placeBook( uint256 bookID ) public {
+  function placeBook( uint256 bookID ) exists(bookID) public {
 
     }
 
   /**
    * Renew library book subscribtion
    */
-   function renewBookRental( uint256 bookID ) public {
+   function renewBookRental( uint256 bookID ) exists(bookID) public {
 
    }
 
