@@ -144,7 +144,7 @@ contract BookLedger is ERC721 {
   }
 
   /**
-   * Renew library book subscribtion
+   * Renew library book subscription
    */
    function renewBookRental( uint256 bookID ) exists(bookID) public {
 

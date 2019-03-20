@@ -42,8 +42,14 @@ contract('ERC721MinimalTests', async function (accounts) {
     await bookLedger.newBook(accounts[0],0,'USA','Watson','John Doe','Bears on Ice',{from: accounts[5]} )
     assert.equal(await bookLedger.numberOfBookInLibraray(), 2)
 
+    // Expected state Changes
+    let bookLedgerStateChanges = [
+	{'var': 'ownerOf.b0', 'expect': accounts[0]},
+	{'var': 'ownerOf.b1', 'expect': accounts[0]}
+    ]
+
     // Check state after done
-    await checkState([bookLedger], [[]], accounts)
+    await checkState([bookLedger], [bookLedgerStateChanges], accounts)
   })
 
   it('should remove book', async function () {
@@ -63,11 +69,16 @@ contract('ERC721MinimalTests', async function (accounts) {
 
     // Remove first book
     let event = await bookLedger.removeBook(bookID_1, {from: accounts[5]})
-
+    
     assert.equal(await bookLedger.numberOfBookInLibraray(), 2)
 
+    // Expected state Changes
+    let bookLedgerStateChanges = [
+	{'var': 'ownerOf.b0', 'expect': accounts[0]},
+	{'var': 'ownerOf.b1', 'expect': zero40}
+    ]
 
-    await checkState([bookLedger], [[]], accounts)
+    await checkState([bookLedger], [bookLedgerStateChanges], accounts)
   })
 
   it('should commit to book removal', async function () {
