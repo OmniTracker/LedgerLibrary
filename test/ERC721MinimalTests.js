@@ -30,22 +30,24 @@ contract('ERC721MinimalTests', async function (accounts) {
   it('should check add book', async function () {
 
     // Add first book
-    assert.equal(await bookLedger.numberOfBookInLibraray(), 0)
-    let bookID_1 = (await bookLedger.newBook.call(accounts[0],0,'Canada','Blueno','Jane Doe','Living Fiction',{from: accounts[5]} )).toNumber()
-    assert.equal(bookID_1, 0)
-    await bookLedger.newBook(accounts[0],0,'Canada','Blueno','Jane Doe','Living Fiction',{from: accounts[5]} )
-    assert.equal(await bookLedger.numberOfBookInLibraray(), 1)
+    assert.equal(await bookLedger.numberOfBookInLibraray( accounts[5] ), 0)
+    let bookID_1 = (await bookLedger.newBook.call(accounts[5], 420010, 0,'Canada','Blueno','Jane Doe','Living Fiction',{from: accounts[5]} )).toNumber() 
+    assert.equal(bookID_1, 420010)
+    await bookLedger.newBook(accounts[5], 420010, 0,'Canada','Blueno','Jane Doe','Living Fiction',{from: accounts[5]} )
+    console.log("Number of books after adding first book", await bookLedger.numberOfBookInLibraray( accounts[5] ))      
+    assert.equal(await bookLedger.numberOfBookInLibraray( accounts[5] ), 1)
 
     // Add second book
-    let bookID_2 = (await bookLedger.newBook.call(accounts[0],0,'USA','Watson','John Doe','Bears on Ice',{from: accounts[5]} )).toNumber()
-    assert.equal(bookID_2, 1)
-    await bookLedger.newBook(accounts[0],0,'USA','Watson','John Doe','Bears on Ice',{from: accounts[5]} )
-    assert.equal(await bookLedger.numberOfBookInLibraray(), 2)
+    let bookID_2 = (await bookLedger.newBook.call(accounts[5], 420011,0,'USA','Watson','John Doe','Bears on Ice',{from: accounts[5]} )).toNumber()
+    assert.equal(bookID_2, 420011)
+    await bookLedger.newBook(accounts[5], 420011,0,'USA','Watson','John Doe','Bears on Ice',{from: accounts[5]} )
+    console.log("Number of books after adding second book", await bookLedger.numberOfBookInLibraray( accounts[5] ))
+    assert.equal(await bookLedger.numberOfBookInLibraray( accounts[5] ), 2)
 
     // Expected state Changes
     let bookLedgerStateChanges = [
-	{'var': 'ownerOf.b0', 'expect': accounts[0]},
-	{'var': 'ownerOf.b1', 'expect': accounts[0]}
+	{'var': 'ownerOf.b0', 'expect': accounts[5]},
+	{'var': 'ownerOf.b1', 'expect': accounts[5]}
     ]
 
     // Check state after done
@@ -55,27 +57,28 @@ contract('ERC721MinimalTests', async function (accounts) {
   it('should remove book', async function () {
 
     // Add first book
-    assert.equal(await bookLedger.numberOfBookInLibraray(), 0)
-    let bookID_1 = (await bookLedger.newBook.call(accounts[0],0,'Canada','Blueno','Jane Doe','Living Fiction',{from: accounts[5]} )).toNumber()
-    assert.equal(bookID_1, 0)
-    await bookLedger.newBook(accounts[0],0,'Canada','Blueno','Jane Doe','Living Fiction',{from: accounts[5]} )
-    assert.equal(await bookLedger.numberOfBookInLibraray(), 1)
+    assert.equal(await bookLedger.numberOfBookInLibraray( accounts[0] ), 0)
+    let bookID_1 = (await bookLedger.newBook.call(accounts[0], 420010, 0,'Canada','Blueno','Jane Doe','Living Fiction',{from: accounts[5]} )).toNumber()
+    assert.equal(bookID_1, 420010)
+    await bookLedger.newBook(accounts[0], 420010, 0,'Canada','Blueno','Jane Doe','Living Fiction',{from: accounts[5]} )
+    assert.equal(await bookLedger.numberOfBookInLibraray( accounts[0] ), 1)
 
     // Add second book
-    let bookID_2 = (await bookLedger.newBook.call(accounts[0],0,'USA','Watson','John Doe','Bears on Ice',{from: accounts[5]} )).toNumber()
-    assert.equal(bookID_2, 1)
-    await bookLedger.newBook(accounts[0],0,'USA','Watson','John Doe','Bears on Ice',{from: accounts[5]} )
-    assert.equal(await bookLedger.numberOfBookInLibraray(), 2)
+    let bookID_2 = (await bookLedger.newBook.call(accounts[0], 420011,0,'USA','Watson','John Doe','Bears on Ice',{from: accounts[5]} )).toNumber()
+    assert.equal(bookID_2, 420011)
+    await bookLedger.newBook(accounts[0], 420011,0,'USA','Watson','John Doe','Bears on Ice',{from: accounts[5]} )
+    assert.equal(await bookLedger.numberOfBookInLibraray( accounts[0] ), 2)
 
-    // Remove first book
-    let event = await bookLedger.removeBook(bookID_1, {from: accounts[5]})
-    
-    assert.equal(await bookLedger.numberOfBookInLibraray(), 2)
+      // Remove first book
+    //let removeBook = await bookLedger.removeBook(accounts[0], bookID_1)
+    await bookLedger.removeBook(accounts[0], bookID_1, {from:accounts[5]} )
+    //console.log("number of books after adding two books and removing one book", await bookLedger.numberOfBookInLibraray( accounts[0] ))
+    assert.equal(await bookLedger.numberOfBookInLibraray( accounts[0] ), 1) 
 
     // Expected state Changes
     let bookLedgerStateChanges = [
-	{'var': 'ownerOf.b0', 'expect': accounts[0]},
-	{'var': 'ownerOf.b1', 'expect': zero40}
+	{'var': 'ownerOf.b0', 'expect': zero40},
+	{'var': 'ownerOf.b1', 'expect': accounts[0]}
     ]
 
     await checkState([bookLedger], [bookLedgerStateChanges], accounts)
