@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity >=0.4.24 <0.6.0;
 
 import "../Support/IERC721.sol";
 import "../Support/SafeMath.sol";

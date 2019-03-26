@@ -1,5 +1,5 @@
 /****************************DO NOT EDIT THIS CODE*****************************/
-pragma solidity ^0.4.24;//Tells the compiler which version of Solidity to use.
+pragma solidity >=0.4.24 <0.6.0;//Tells the compiler which version of Solidity to use.
 
 /**
 * This interface specifies the functions that must be implemented in order to

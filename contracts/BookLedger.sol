@@ -1,5 +1,5 @@
 
-pragma solidity ^0.4.24;
+pragma solidity >=0.4.21 <0.6.0;
 import "./Tokens/ERC721.sol";
 
 /**
@@ -67,10 +67,10 @@ contract BookLedger is ERC721 {
    function newBook ( address owner,
 		      uint256 bookID,
                       uint256 genre,
-                      string country,
-                      string publisher,
-                      string author,
-                      string name )
+                      string memory country,
+                      string memory publisher,
+                      string memory author,
+                      string memory name )
       public onlyMinter returns(uint256)
    {
      Book memory book = Book({
@@ -123,13 +123,6 @@ contract BookLedger is ERC721 {
     }
 
   /**
-   * Commit to removing book from the library ledger
-   */
-   function commitBookRemoval ( uint256 bookID ) exists(bookID) public {
-
-   }
-
-  /**
    * Remove book from the library
    * @param bookID The unique ID of the book in the library.
    */
@@ -154,20 +147,6 @@ contract BookLedger is ERC721 {
      _burn(owner, bookID);
      
      return true;
-   }
-
- /**
-  * Place book back into the library
-  */
-  function returnBook( uint256 bookID ) exists(bookID) public {
-
-  }
-
-  /**
-   * Renew library book subscription
-   */
-   function renewBookRental( uint256 bookID ) exists(bookID) public {
-
    }
 
   /**

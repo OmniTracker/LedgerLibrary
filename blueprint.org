@@ -1,3 +1,0 @@
-
- list of Users permits iterating over the list to see all users
-preferable to have a list of users that can then map address to users list of books

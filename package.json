@@ -1,8 +1,8 @@
 {
-  "name": "dappproject1",
+  "name": "drizzle-box",
   "version": "1.0.0",
-  "description": "Setup &amp; Token",
-  "main": "index.js",
+  "description": "",
+  "main": "truffle-config.js",
   "directories": {
     "test": "test"
   },
@@ -11,21 +11,23 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/AlecSchaefer/DAppProject1.git"
+    "url": "git+https://github.com/truffle-box/drizzle-box.git"
   },
+  "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/AlecSchaefer/DAppProject1/issues"
+    "url": "https://github.com/truffle-box/drizzle-box/issues"
   },
-  "homepage": "https://github.com/AlecSchaefer/DAppProject1#readme",
+  "homepage": "https://github.com/truffle-box/drizzle-box#readme",
   "dependencies": {
-    "assert-diff": "2.0.3",
+    "assert-diff": "^2.0.3",
+    "big-number": "^2.0.0",
+    "openzeppelin-solidity": "^2.1.1",
+    "web3-utils": "^1.0.0-beta.50",
     "bignumber.js": "8.0.1",
     "ganache-cli": "6.2.5",
     "lodash": "4.17.11",
-    "openzeppelin-solidity": "2.0.0",
-    "truffle": "4.1.14",
-    "web3-utils": "1.0.0-beta.46"
+    "truffle": "4.1.14"
   }
 }

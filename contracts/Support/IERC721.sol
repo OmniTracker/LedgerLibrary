@@ -1,5 +1,5 @@
 /****************************DO NOT EDIT THIS CODE*****************************/
-pragma solidity ^0.4.24;
+pragma solidity >=0.4.21 <0.6.0;
 
 /**
 * This interface specifies the functions that must be implemented in order to

@@ -1,21 +1,15 @@
-/****************************DO NOT EDIT THIS CODE*****************************/
-pragma solidity ^0.4.24;
+pragma solidity >=0.4.21 <0.6.0;
 
-/**
-* This standardized contract is required for Truffle to work correctly. It is
-* used to help deploy smart contracts to the blockchain, and does not have any
-* specific relevance to our DApp.
-*/
 contract Migrations {
     address public owner;
     uint public last_completed_migration;
 
-    modifier restricted() {
-        if (msg.sender == owner) _;
-    }
-
     constructor() public {
         owner = msg.sender;
+    }
+
+    modifier restricted() {
+        if (msg.sender == owner) _;
     }
 
     function setCompleted(uint completed) public restricted {
