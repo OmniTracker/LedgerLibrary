@@ -15,40 +15,24 @@ truffle can use them to send transaction
 
 A major goal of this smart contract is to synchronize off-chain goods with on-chain status. What this means
 is to say, if something happens to a physical book, whether it's traded, lost, or kept, it's status on the network
-is updated to reflect its pysical status, in a potentially adversarial manner. The following are different ways
+is updated to reflect its physical status, in a potentially adversarial manner. The following are different ways
 transactions can occur. We will start with two entities, a librarian Lorelai, and a bibliophile Alice. In our
 contract, there is no difference between a library and a user, however as this is the most common sort of
 scenario, we will start here.
 
 
-1. Lorelai -> Alice local transaction
-   1. book rental succeeds
-   2. book rental fails
-2. Lorelai -> Alice local transaction
-   1. book trade succeeds
-   2. book trade fails
-3. Lorelai -> Alice remote transaction
-   1. book rental succeeds
-   2. book rental fails
-4. Lorelai -> Alice remote transaction   
-   1. book trade succeeds
-   2. book trade fails
-5. Alice -> Lorelai book returned in local transaction
-   1. book returned before due-date
-   2. book returned after due-date
-6. Alice -> Lorelai book returned in remote transaction
-   1. book returned before due-date
-   2. book returned after due-date
-7. Alice mint,burn, report stolen
-   1. Alice mints book with clean bookID
-   2. Alice mints book with dirty bookID
-   3. Alice reports a book stolen
+1. Lorelai -> Alice local book rental
+2. Lorelai -> Alice local book trade
+3. Lorelai -> Alice remote book rental
+4. Lorelai -> Alice remote book trade
+5. Alice -> Lorelai local book returned
+6. Alice -> Lorelai remote book returned
+7. Alice mint, burn, or report stolen book
 
-Trading is a one-time transaction with no due-date; ownership of the book changes. Renting will expect two
-transacations with an alert if the second transaction occurs after the due date; ownership should be locked to the
-original owner to ensure no one else can steal the book as their own.
-
-Let us examine each of these scenarios.
+Trading is a one-time transaction with no due-date; ownership of the book changes. Renting will lock the rented
+books to the original owner and when the book is returned, an alert should be posted if the transaction occurs after
+the due date. In multiple cases, security deposits will be put into escrow to safeguard transacations. Let us
+examine each of these scenarios.
 
 ### 1 and 5 - Local rental with return
 
@@ -57,7 +41,7 @@ books are scanned, they are committed to be traded. During this time, a due-date
 Lorelai will then ask Alice if she wishes to finalize the transaction. Alice decides she no longer wants one of the
 books. Lorelai should cancel this book from the commit and finalize the remaining books.  A few weeks later, Alice
 goes to return the books. However, Alice has forgetten that one of the books is very popular and had an earlier due date.
-Alice should scan the books to commit to trade to Lorelai. Lorelai recognizes one of the books is late, askes Alice to pay
+Alice should scan the books to commit to trade to Lorelai. Lorelai recognizes one of the books is late, asks Alice to pay
 a marginal penalty, and then finalizes the transaction. 
 
 A few adversarial situations.
@@ -91,7 +75,7 @@ deposit.
 ### 3 and 6 - remote rental with return
 
 Alice wants to rent a book from Lorelai who lives on another continent. Alice commits a security deposit to rent the book.
-Lorelai commits the book from trade and ships it to Alice. Alice recieves the package in perfect condition, reads it, then
+Lorelai commits the book for trade and ships it to Alice. Alice recieves the package in perfect condition, reads it, then
 ships it back to Lorelai before the due date. Alice is refunded her security deposit.
 
 In many scenarios, there are parallels to a local transaction. We will highlight cases where it is different.
@@ -103,10 +87,13 @@ If Lorelai sends Alice a damaged book, Alice should cancel the transaction and b
 what is to prevent Alice from lying and saying a book was damaged when it really wasn't? Lorelai upon hearing the complaint
 can refute the claim. If she can provide evidence that the package was sent in good condition (for example a tracking ID provided
 by the shipper) to an arbiter on the network, then Alice is found to have lied and Lorelai will recieve the security deposit.
-The second case is essentially the same as above.
+If Alice is able to prove the package arrived damaged, and Lorelai can't prove it was sent in perfect condition, then Alice is
+refunded her security deposit. If Lorelai can prove it was sent in perfect condition, then the two must involve the shipper in an
+off-network settlement. Alice should be refunded her security deposit and Lorelai should receive the settlement.
+The reverse case of Alice shipping back to Lorelai is essentially the same as above.
 
 
-# 4 - remote trade
+### 4 - remote trade
 
 Alice wants to trade a book with Lorelai who lives on a different continent. The scenarios are the same as a local trade.
 However an arbiter may be included to determine guilt if something unfortunate were to occur to a book during shipment or
