@@ -14,24 +14,35 @@ truffle can use them to send transaction
 ## Trading Books
 
 A major goal of this smart contract is to synchronize off-chain goods with on-chain status. What this means
-is to say, if something happens to a physical book, whether it's traded, lost, or kept, it's status is updated
-to reflect this status in a potentially adversarial manner. The following are different ways transactions can occur.
-We will start with two entities, a librarian Lorelai, and a bibliophile Alice. In our contract, there is no difference
-between a library and a user, however as this is the most common sort of scenario, we will start here.
+is to say, if something happens to a physical book, whether it's traded, lost, or kept, it's status on the network
+is updated to reflect its pysical status, in a potentially adversarial manner. The following are different ways
+transactions can occur. We will start with two entities, a librarian Lorelai, and a bibliophile Alice. In our
+contract, there is no difference between a library and a user, however as this is the most common sort of
+scenario, we will start here.
 
 
 1. Lorelai -> Alice local transaction
-   1. trade succeeds
-   2. trade fails
-2. Lorelai -> Alice remote transaction
-   1. trade succeeds
-   2. trade fails
-3. Alice -> Lorelai return book
-   1. returned before due-date
-   2. returned after due-date
-4. Alice mint,burn
+   1. book rental succeeds
+   2. book rental fails
+2. Lorelai -> Alice local transaction
+   1. book trade succeeds
+   2. book trade fails
+3. Lorelai -> Alice remote transaction
+   1. book rental succeeds
+   2. book rental fails
+4. Lorelai -> Alice remote transaction   
+   1. book trade succeeds
+   2. book trade fails
+5. Alice -> Lorelai book returned in local transaction
+   1. book returned before due-date
+   2. book returned after due-date
+6. Alice -> Lorelai book returned in remote transaction
+   1. book returned before due-date
+   2. book returned after due-date
+7. Alice mint,burn, report stolen
    1. Alice mints book with clean bookID
    2. Alice mints book with dirty bookID
+   3. Alice reports a book stolen
 
 Trading is a one-time transaction with no due-date; ownership of the book changes. Renting will expect two
 transacations with an alert if the second transaction occurs after the due date; ownership should be locked to the
@@ -39,38 +50,83 @@ original owner to ensure no one else can steal the book as their own.
 
 Let us examine each of these scenarios.
 
-### 1 and 3 - Local transaction with return
+### 1 and 5 - Local rental with return
 
 If Alice is checking out a book, she will hand the book or books to Lorelai. Lorelai will scan the books. When the
 books are scanned, they are committed to be traded. During this time, a due-date will be applied to the books.
 Lorelai will then ask Alice if she wishes to finalize the transaction. Alice decides she no longer wants one of the
-books. Lorelai should cancel the book from the commit and finalize the remaining books.  Alice forgets that one of the
-books is very popular and has an earlier deadline, so that when she comes to return the books, one of them is late.
-Alice should scan the books to commit to trade to Lorelai. It should check that as these books were rented that this
-second trade should only be between Alice and Lorelai. That is, Alice shouldn't be able to trade the book with anyone
-else once she checks it out. Lorelai recognizes one of the books is late and finalizes the transaction.
+books. Lorelai should cancel this book from the commit and finalize the remaining books.  A few weeks later, Alice
+goes to return the books. However, Alice has forgetten that one of the books is very popular and had an earlier due date.
+Alice should scan the books to commit to trade to Lorelai. Lorelai recognizes one of the books is late, askes Alice to pay
+a marginal penalty, and then finalizes the transaction. 
 
 A few adversarial situations.
  - Alice decides she really enjoys the books and doesn't want to return them
  - Alice loses the books and can't return them
  - Alice wants others to enjoy the books and loans them to others
- - Alice returns the book in a damaged state.
+ - Alice returns the book in a damaged state
 
 In the first two cases, we can safeguard Lorelai by having Alice offer a security deposit at the time of transaction.
-This means if after a fair amount of time, the book will be considered lost or stolen and Lorelai will be compensated
+This means if after a fair amount of time, the book will be considered lost or stolen then Lorelai will be compensated
 as such. If Alice had returned the books in time, the security deposit would be returned. In the third case, Alice should
 not be able to loan the book to anyone else. If she tries to trade the book with a third person, the trade should be voided.
-If she goes ahead and gives the book to someone else, Lorelai is safeguarded via the security deposit. The third person
-will not be able to add the book ever again on the chain as it will remain locked as a lost book of Lorelai's. Finally,
-in the fourth case, Lorelai should accept the book with some penalty to Alice then decide if she wants to burn the book.
-When the book is burned, its token is removed from the contract.
+If she goes ahead and gives the book to someone else, Lorelai is safeguarded via the security deposit - regressing to Alice
+having stolen the book. The third person should not be able to add the book back onto the chain as it will remain locked
+as a lost book of Lorelai's. Finally, in the fourth case, Lorelai should accept the book with some penalty to Alice then
+decide if she wants to repair or burn the book.
 
-### 2 - remote transactions
 
-### 4 - Minting and Burning books
+### 2 - local trade
+
+Lorelai has a cornicopia of books that she is willing to trade. Alice visits Lorelai and wishes to trade a book. Lorelai can
+decide the trade value, whether it's a book Alice owns or a monetary amount. Once the trade value is decided, both commit
+their object for trading. When Alice receives the book, she should scan it, check that it is the book Lorelai sent, and finalize
+the trasaction as successful. Lorelai should recieve the monetary amount once Alice finalizes the transacation, or also checks and
+finalizes the book Alice sent. If both Lorelai and Alice are trading books, a security deposit for each book should be put into escrow
+to prevent theft or damage. In this way, if Alice tries to hand Lorelai a damaged book, Lorelai can cancel the transaction. When
+this happens, Alice can either return the book to Lorelai and receive her security deposit, or walk away, forfeiting her security
+deposit. 
+
+
+### 3 and 6 - remote rental with return
+
+Alice wants to rent a book from Lorelai who lives on another continent. Alice commits a security deposit to rent the book.
+Lorelai commits the book from trade and ships it to Alice. Alice recieves the package in perfect condition, reads it, then
+ships it back to Lorelai before the due date. Alice is refunded her security deposit.
+
+In many scenarios, there are parallels to a local transaction. We will highlight cases where it is different.
+
+ - The book is lost or damaged in shipment from Lorelai to Alice
+ - The book is lost or damaged in shipment from Alice to Lorelai
+
+If Lorelai sends Alice a damaged book, Alice should cancel the transaction and be refunded her security deposit. However,
+what is to prevent Alice from lying and saying a book was damaged when it really wasn't? Lorelai upon hearing the complaint
+can refute the claim. If she can provide evidence that the package was sent in good condition (for example a tracking ID provided
+by the shipper) to an arbiter on the network, then Alice is found to have lied and Lorelai will recieve the security deposit.
+The second case is essentially the same as above.
+
+
+# 4 - remote trade
+
+Alice wants to trade a book with Lorelai who lives on a different continent. The scenarios are the same as a local trade.
+However an arbiter may be included to determine guilt if something unfortunate were to occur to a book during shipment or
+someone tries to lie about the status of a shipped book.
+
+
+### 7 - Minting and Burning books
 
 Alice already owns a small library of books. She wants to add them to the LedgerLibrary so that she can trade them with
 others on the network. She should be able to add all of the books with a unique bookID. Once these books are minted, no-one
-should be able to mint a book with the same bookID. Alice should not be able to mint a book with a pre-concieved bookID. One
-may want to do this to prevent another from minting a legitimate book or lying about what the book actually is. We can prevent
-this by assuming there is an encrypted phone app that Alice must log into that scans the book and generates a unique bookID.
+else should be able to mint a book with the same bookID. Alice should not be able to mint a book with a pre-concieved
+bookID. If Alice were nefarious, she may want to do this to prevent another from minting a legitimate book or lying about
+what the book actually is. We can prevent this by assuming there is an encrypted phone app that Alice must log into that
+scans the book and generates a unique bookID.
+
+Alice has added some books to her library. However she dropped one of the books in her pool and wants to remove it
+from her library. She should be able to burn the book. This action should remove the corresponding book token from
+the network.
+
+Alice's favorite book 'Alice in Wonderland' has been stolen by the Mad Hatter. Alice should report the book stolen
+so that if anyone tries to add the book to the network, it will be rejected as lost. There is nothing preventing
+someone from trading stolen books off network, however this defeats the purpose of the smart contract and will be
+considered as an undesirable event.
