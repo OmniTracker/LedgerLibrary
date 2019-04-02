@@ -31,14 +31,27 @@ contract BookLedger is ERC721 {
     string name;
   }
 
+  struct BookTransmission {
+    string status;
+  }
+
   address[] public _entity;
 
-  mapping(address => mapping(uint256 => Book)) _books; // index books by entity address and bookID
-  mapping(uint256 => Book) _lostBooksList;
-  mapping(address => uint256[]) _booksList;
+  // index books by entity address and bookID
+  mapping(address => mapping(uint256 => Book)) internal _books;
+  // index books lost by bookID. An address is no longer needed because the
+  // book is lost
+  mapping(uint256 => Book) internal _lostBooksList;
+  mapping(address => uint256[]) internal _booksList;
 
-  // Commit books for user
+  // Commit books for user. The indexing for this structure corresponds to the
+  // address of the sender, reciever of the book, and the book ID
   mapping(address => mapping(address => mapping(uint256 => bool))) internal _committed;
+
+  // Will hold the transmission status of a book corresponding to the sender, reciever, and bookID
+  // The book needs to be commited for transmission and the status must be updated
+  // corresponding to how the book is being transmitted.
+  mapping(address => mapping(address => mapping(uint256 => BookTransmission))) internal _bookTransmission;
 
   address public _minter;
   uint256 public _startBalance;
@@ -132,11 +145,11 @@ contract BookLedger is ERC721 {
    }
 
  /**
-  * Place book back into the library
+  * Place book back into the library. This function should commit the book
+  * and mark that it is being transfer.
   */
   function returnBook( address owner, uint256 bookID ) exists(bookID) public
   {
-    // Commit book back to being sent to library
 
 
   }
@@ -149,7 +162,7 @@ contract BookLedger is ERC721 {
 
    }
   /**
-   *  Request book from the library
+   *  Request book from the library.
    */
    function requestBook ( address owner, uint256 bookID ) exists(bookID) public
    {
@@ -158,23 +171,39 @@ contract BookLedger is ERC721 {
 
    }
   /**
-    * Accept that the book is currntly in your possesion.
+    * Accept that the book is currntly in your possesion. Check how the book
+    * should being transfered, then handle accepting the book based off this
+    * information.
     */
-    function acceptBook ( address owner, uint256 bookID ) exists(bookID) public
+    function acceptBook ( address sender, address reciever uint256 bookID ) exists(bookID) public
     {
-        // Check the status of if the book is being sent or not.
 
     }
-
     /**
-      * Trade Book
+      * Trade Book. Trade book will allow one user to trade books with another
+      * user without resubmitting the book to the library. This function should
+      * initiate the transaction and the independent needs to confirm when they
+      * have recieved the book.
       */
-    function tradeBook ( address owner, uint256 bookID ) exists(bookID) public
+    function tradeBook ( address owner1, uint256 bookID1, address owner2, uint256 bookID2 ) exists(bookID) public
+    {
+
+    }
+    /**
+      * Transfer Book. transfer book will allow one user to trade books with another
+      * user without resubmitting the book to the library. This function should
+      * initiate the transaction and the independent needs to confirm when they
+      * have recieved the book.
+      */
+    function transferBook ( address owner, address reciever, uint256 bookID ) exists(bookID) public
     {
 
     }
   /**
-    *
+    * If a book is lost in transmission or by the user, this function should be called
+    * to clear out any transaction information for the given book. Once this
+    * information is cleared, the book is then burned and removed from the
+    * library blockchain.
     */
     function lostBook ( address owner, uint256 bookID ) exists(bookID) public
     {
@@ -189,9 +218,11 @@ contract BookLedger is ERC721 {
     }
 
   /**
-    * Commit to removing book from the library ledger
+    * Commit to removing book from the library ledger or began transfering book
+    * to another user. The only one who can make the commitment of the book
+    * is the owner of the book.
     */
-    function commitBook ( address owner, uint256 bookID ) exists(bookID) public
+    function commitBook ( address sender, address reciever uint256 bookID ) exists(bookID) public
     {
       // Only the library should be able to remove the book from this place.
       requires(owner == msg.sender);
