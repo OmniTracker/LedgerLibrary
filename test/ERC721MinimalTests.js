@@ -11,10 +11,6 @@ const pause = utils.pause
 
 const startBalance = 100
 const rentalInterval = 200
-//const feedingInterval = 3000 // 1000ms == 1sec
-//const genes = 0
-//const name = 'Bruno'
-
 
 contract('ERC721MinimalTests', async function (accounts) {
 
@@ -31,10 +27,10 @@ contract('ERC721MinimalTests', async function (accounts) {
 
     // Add first book
     assert.equal(await bookLedger.numberOfBookInLibraray( accounts[5] ), 0)
-    let bookID_1 = (await bookLedger.newBook.call(accounts[5], 420010, 0,'Canada','Blueno','Jane Doe','Living Fiction',{from: accounts[5]} )).toNumber() 
+    let bookID_1 = (await bookLedger.newBook.call(accounts[5], 420010, 0,'Canada','Blueno','Jane Doe','Living Fiction',{from: accounts[5]} )).toNumber()
     assert.equal(bookID_1, 420010)
     await bookLedger.newBook(accounts[5], 420010, 0,'Canada','Blueno','Jane Doe','Living Fiction',{from: accounts[5]} )
-    console.log("Number of books after adding first book", await bookLedger.numberOfBookInLibraray( accounts[5] ))      
+    console.log("Number of books after adding first book", await bookLedger.numberOfBookInLibraray( accounts[5] ))
     assert.equal(await bookLedger.numberOfBookInLibraray( accounts[5] ), 1)
 
     // Add second book
@@ -57,23 +53,23 @@ contract('ERC721MinimalTests', async function (accounts) {
   it('should remove book', async function () {
 
     // Add first book
-    assert.equal(await bookLedger.numberOfBookInLibraray( accounts[0] ), 0)
-    let bookID_1 = (await bookLedger.newBook.call(accounts[0], 420010, 0,'Canada','Blueno','Jane Doe','Living Fiction',{from: accounts[5]} )).toNumber()
+    assert.equal(await bookLedger.numberOfBookInLibraray( accounts[5] ), 0)
+    let bookID_1 = (await bookLedger.newBook.call(accounts[5], 420010, 0,'Canada','Blueno','Jane Doe','Living Fiction',{from: accounts[5]} )).toNumber()
     assert.equal(bookID_1, 420010)
-    await bookLedger.newBook(accounts[0], 420010, 0,'Canada','Blueno','Jane Doe','Living Fiction',{from: accounts[5]} )
-    assert.equal(await bookLedger.numberOfBookInLibraray( accounts[0] ), 1)
+    await bookLedger.newBook(accounts[5], 420010, 0,'Canada','Blueno','Jane Doe','Living Fiction',{from: accounts[5]} )
+    assert.equal(await bookLedger.numberOfBookInLibraray( accounts[5] ), 1)
 
     // Add second book
-    let bookID_2 = (await bookLedger.newBook.call(accounts[0], 420011,0,'USA','Watson','John Doe','Bears on Ice',{from: accounts[5]} )).toNumber()
+    let bookID_2 = (await bookLedger.newBook.call(accounts[5], 420011,0,'USA','Watson','John Doe','Bears on Ice',{from: accounts[5]} )).toNumber()
     assert.equal(bookID_2, 420011)
-    await bookLedger.newBook(accounts[0], 420011,0,'USA','Watson','John Doe','Bears on Ice',{from: accounts[5]} )
-    assert.equal(await bookLedger.numberOfBookInLibraray( accounts[0] ), 2)
+    await bookLedger.newBook(accounts[5], 420011,0,'USA','Watson','John Doe','Bears on Ice',{from: accounts[5]} )
+    assert.equal(await bookLedger.numberOfBookInLibraray( accounts[5] ), 2)
 
       // Remove first book
     //let removeBook = await bookLedger.removeBook(accounts[0], bookID_1)
-    await bookLedger.removeBook(accounts[0], bookID_1, {from:accounts[5]} )
+    await bookLedger.removeBook(accounts[5], bookID_1, {from:accounts[5]} )
     //console.log("number of books after adding two books and removing one book", await bookLedger.numberOfBookInLibraray( accounts[0] ))
-    assert.equal(await bookLedger.numberOfBookInLibraray( accounts[0] ), 1) 
+    assert.equal(await bookLedger.numberOfBookInLibraray( accounts[5] ), 1)
 
     // Expected state Changes
     let bookLedgerStateChanges = [
@@ -84,44 +80,81 @@ contract('ERC721MinimalTests', async function (accounts) {
     await checkState([bookLedger], [bookLedgerStateChanges], accounts)
   })
 
-  it('should commit to book removal', async function () {
-    await checkState([bookLedger], [[]], accounts)
+  it('Get book from library', async function () {
+
+    // Add first book
+    assert.equal(await bookLedger.numberOfBookInLibraray( accounts[5] ), 0)
+    let bookID_1 = (await bookLedger.newBook.call(accounts[5], 420010, 0,'Canada','Blueno','Jane Doe','Living Fiction',{from: accounts[5]} )).toNumber()
+    assert.equal(bookID_1, 420010)
+    await bookLedger.newBook(accounts[5], 420010, 0,'Canada','Blueno','Jane Doe','Living Fiction',{from: accounts[5]} )
+    assert.equal(await bookLedger.numberOfBookInLibraray( accounts[5] ), 1)
+
+    // Request book from library.
+
+    // Library mark the book as being transmitted
+
+    // The user should signal the book has been recieved
+
+    // The user should began to return the book to the libray.
+
+    // The library should indicate they were able to recieve the book
+
+    // Once the book has reveived the book, will should then remove the book from
+    // libray.
+
   })
 
   it('should check if book availability after removal', async function () {
-    await checkState([bookLedger], [[]], accounts)
+
+    // Add first book
+    assert.equal(await bookLedger.numberOfBookInLibraray( accounts[5] ), 0)
+    let bookID_1 = (await bookLedger.newBook.call(accounts[5], 420010, 0,'Canada','Blueno','Jane Doe','Living Fiction',{from: accounts[5]} )).toNumber()
+    assert.equal(bookID_1, 420010)
+    await bookLedger.newBook(accounts[5], 420010, 0,'Canada','Blueno','Jane Doe','Living Fiction',{from: accounts[5]} )
+    assert.equal(await bookLedger.numberOfBookInLibraray( accounts[5] ), 1)
+
+    // Check to see if the book is available
+
+    // remove the book from the libray
+    await bookLedger.removeBook(accounts[5], bookID_1, {from:accounts[5]} )
+    //console.log("number of books after adding two books and removing one book", await bookLedger.numberOfBookInLibraray( accounts[0] ))
+    assert.equal(await bookLedger.numberOfBookInLibraray( accounts[5] ), 1)
+
+    // Check to see if the book is now set to not available
+
   })
 
-  it('should add book then check if number of books', async function () {
-    await checkState([bookLedger], [[]], accounts)
+  it('Transfer book between users', async function () {
+
+    // Add first book
+    assert.equal(await bookLedger.numberOfBookInLibraray( accounts[5] ), 0)
+    let bookID_1 = (await bookLedger.newBook.call(accounts[5], 420010, 0,'Canada','Blueno','Jane Doe','Living Fiction',{from: accounts[5]} )).toNumber()
+    assert.equal(bookID_1, 420010)
+    await bookLedger.newBook(accounts[5], 420010, 0,'Canada','Blueno','Jane Doe','Living Fiction',{from: accounts[5]} )
+    assert.equal(await bookLedger.numberOfBookInLibraray( accounts[5] ), 1)
+
+    // Add second book
+    let bookID_2 = (await bookLedger.newBook.call(accounts[5], 420011,0,'USA','Watson','John Doe','Bears on Ice',{from: accounts[5]} )).toNumber()
+    assert.equal(bookID_2, 420011)
+    await bookLedger.newBook(accounts[5], 420011,0,'USA','Watson','John Doe','Bears on Ice',{from: accounts[5]} )
+    assert.equal(await bookLedger.numberOfBookInLibraray( accounts[5] ), 2)
+
+    // Take book out with account[3]
+
+    // Take book out with account[4]
+
+    // Transfer books between two user
+
+    // return both books back to the libray
+
+    // Remove both book from the library
+
   })
 
-  it('should renew book', async function () {
-    await checkState([bookLedger], [[]], accounts)
-  })
+  it('Should fail to add book into circulation if not library', async function () {
 
-  it('should fail to double remove book', async function () {
-    await checkState([bookLedger], [[]], accounts)
-  })
 
-  it('should fail to double place book', async function () {
-    await checkState([bookLedger], [[]], accounts)
-  })
 
-  it('should fail to double commit book', async function () {
-    await checkState([bookLedger], [[]], accounts)
-  })
-
-  it('should remove book, place book back, then check availability', async function () {
-    await checkState([bookLedger], [[]], accounts)
-  })
-
-  it('should add book then remove book completely from library', async function () {
-    await checkState([bookLedger], [[]], accounts)
-  })
-
-  it('should fail to remove book if book doesnt exist', async function () {
-    await checkState([bookLedger], [[]], accounts)
   })
 
 })

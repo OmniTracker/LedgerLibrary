@@ -307,11 +307,9 @@ contract BookLedger is ERC721 {
       // Transfer the book token to the new owner of the book.
       transferFrom(sender,reciever,bookID);
       // Update book ownership mappings
-
-      // TO DO
     }
   /**
-    * If a book is lost in transmission or by the user, this function should be called
+    * If a book is lost in transmission or by a user, this function should be called
     * to clear out any transaction information for the given book. Once this
     * information is cleared, the book is then burned and removed from the
     * library blockchain.
