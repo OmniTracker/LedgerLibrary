@@ -31,10 +31,6 @@ contract BookLedger is ERC721 {
     string name;
   }
 
-  struct BookTransmission {
-    string status;
-  }
-
   address[] public _entity;
 
   // index books by entity address and bookID
@@ -51,11 +47,10 @@ contract BookLedger is ERC721 {
   // Will hold the transmission status of a book corresponding to the sender, reciever, and bookID
   // The book needs to be commited for transmission and the status must be updated
   // corresponding to how the book is being transmitted.
-  mapping(address => mapping(address => mapping(uint256 => BookTransmission))) internal _bookTransmission;
+  mapping(address => mapping(address => mapping(uint256 => bool))) internal _bookTransmission;
 
   address public _minter;
   uint256 public _startBalance;
-  uint256 public _rentalInterval;
   constructor(
     address minter,
     uint256 startBalance
@@ -126,11 +121,22 @@ contract BookLedger is ERC721 {
     {
         return _books[owner][bookID].availability;
     }
+
+    function isBookInTransmission( address sender, address reciever, uint256 bookID ) public exists(bookID) view returns(bool)
+    {
+      return _bookTransmission[sender][reciever][bookID];
+    }
+
+    function isBookCommitted ( address sender, address reciever, uint256 bookID ) public exists(bookID) view returns(bool)
+    {
+      return _committed[sender][reciever][bookID];
+    }
   /**
    * Remove book from the library
    * @param bookID The unique ID of the book in the library.
    */
-   function removeBook( address owner, uint256 bookID ) public exists(bookID) returns(bool) {
+   function removeBook( address owner, uint256 bookID ) public exists(bookID) returns(bool)
+   {
      Book memory book = _books[owner][bookID];
      emit bookRemoved( book.publisher, book.author, book.name );
      // remove book from book list by swapping with last element in list
@@ -143,41 +149,68 @@ contract BookLedger is ERC721 {
      _burn(owner, bookID);
      return true;
    }
-
  /**
   * Place book back into the library. This function should commit the book
   * and mark that it is being transfer.
   */
   function returnBook( address owner, uint256 bookID ) exists(bookID) public
   {
+    // Return the book to the minter, or the library for our situation
 
 
+    // Do know if we should handle local book returns in this function, or make
+    // it so the library have to go through the process of accepting the book
+    // back into the library.
   }
   /**
     * Signal that the book has physically been returned to the library
     */
-   function archiveBook( address owner, uint256 bookID ) exists(bookID) public
+   function archiveBook( address oldOwner, uint256 bookID ) exists(bookID) public
    {
      // Only the library should be able to place the book back into the archive
-
+     requires(msg.sender == _minter);
+     // The current owner of the book should not be the same as the library.
+     // The library should be
+     requires(msg.sender != oldOwner);
+     //
+     acceptBook (oldOwner, _minter, bookID);
    }
   /**
    *  Request book from the library.
    */
-   function requestBook ( address owner, uint256 bookID ) exists(bookID) public
+   function requestBook ( address newOwner, uint256 bookID ) exists(bookID) public
    {
      // You should not be able to request a book that you are the owner of
-     requires(msg.sender != owner);
-
+     requires(msg.sender == newOwner);
+     // The library should not be able to request book back from itself.
+     requires(_minter != msg.sender);
+     // The book should not be in transmission or currently commited to an
+     // transaction.
+     requires(!isBookCommitted(_minter,newOwner,bookID);
+     requires(!isBookInTransmission(_minter,newOwner,bookID));
+     // The book should currently be in the possesion of the library
    }
   /**
     * Accept that the book is currntly in your possesion. Check how the book
     * should being transfered, then handle accepting the book based off this
     * information.
     */
-    function acceptBook ( address sender, address reciever uint256 bookID ) exists(bookID) public
+    function acceptBook ( address sender, address reciever, uint256 bookID ) exists(bookID) public
     {
-
+      // The person recieving the book should be the only one who should be able
+      // to accept the book.
+      requires(msg.sender == reciever);
+      // Check to make sure the book is in the process of being transfer between the
+      // two users.
+      requires(isBookCommitted(sender,reciever,bookID);
+      requires(isBookInTransmission(sender,reciever,bookID));
+      // A user should not be able to transferbook to themself
+      requires(sender != reciever);
+      // After the book is accepted, transfer ownership of the book
+      transferBook(sender, reciever, bookID );
+      // After books have been succefully accepted, reset mappings to false
+      _committed[sender][reciever][bookID] = false;
+      _bookTransmission[sender][reciever][bookID] = false;
     }
     /**
       * Trade Book. Trade book will allow one user to trade books with another
@@ -185,9 +218,17 @@ contract BookLedger is ERC721 {
       * initiate the transaction and the independent needs to confirm when they
       * have recieved the book.
       */
-    function tradeBook ( address owner1, uint256 bookID1, address owner2, uint256 bookID2 ) exists(bookID) public
+    function tradeBook ( address owner1, uint256 bookID1, address owner2, uint256 bookID2) exists(bookID) public
     {
-
+      // Make sure books are not currntly in the process of being transfered to
+      // anyone else before making trade.
+      requires(_committed[owner1][owner2][bookID1] == false);
+      requires(_bookTransmission[owner1][owner2]bookID1] == false);
+      requires(_committed[owner2][owner1][bookID2] == false);
+      requires(_bookTransmission[owner2][owner1]bookID2] == false);
+      // Set books as being prompted for transmission
+      _committed[owner1][owner2][bookID1] = true;
+      _committed[owner2][owner1][bookID2] = true;
     }
     /**
       * Transfer Book. transfer book will allow one user to trade books with another
@@ -195,9 +236,11 @@ contract BookLedger is ERC721 {
       * initiate the transaction and the independent needs to confirm when they
       * have recieved the book.
       */
-    function transferBook ( address owner, address reciever, uint256 bookID ) exists(bookID) public
+    function transferBook ( address sender, address reciever, uint256 bookID ) exists(bookID) public
     {
-
+      // Transfer the book token to the new owner of the book.
+      transferFrom(sender,reciever,bookID);
+      // Update book ownership mappings
     }
   /**
     * If a book is lost in transmission or by the user, this function should be called
@@ -207,13 +250,10 @@ contract BookLedger is ERC721 {
     */
     function lostBook ( address owner, uint256 bookID ) exists(bookID) public
     {
-      // Can not lose the same book twice, so will not allow the book to
+      // Cannot lose the same book twice, so will not allow the book to
       // be re added to the lost book list.
        requires(_lostBooksList[bookID] != _books[owner][bookID]);
-       // Only the
-
-       Book memory book = _books[owner][bookID];
-        _lostBooksList[bookID] = book;
+       _lostBooksList[bookID] = _books[owner][bookID];
         removeBook( owner, bookID );
     }
 
@@ -222,11 +262,14 @@ contract BookLedger is ERC721 {
     * to another user. The only one who can make the commitment of the book
     * is the owner of the book.
     */
-    function commitBook ( address sender, address reciever uint256 bookID ) exists(bookID) public
+    function setBookInTransmission ( address sender, address reciever, uint256 bookID ) exists(bookID) public
     {
-      // Only the library should be able to remove the book from this place.
-      requires(owner == msg.sender);
-      Book memory book = _books[owner][bookID];
-
+      // The send of the book should be the only one able to send the book.
+      requires(sender == msg.sender);
+      // The book must already be committed.
+      requires(_committed[sender][reciever][bookID] == true);
+      // The book should not already be marked as in transmission.
+      requires(_bookTransmission[sender][reciever][bookID] == false);
+      _bookTransmission[sender][reciever][bookID] == true;
     }
 }
