@@ -55,7 +55,8 @@ async function expectedState(token, stateChanges, accounts, name) {
     case 'BookLedger':
       state = {
 	  'ownerOf': {'b0': zero40, 'b1': zero40, 'b2': zero40, 'b3': zero40, 'b4': zero40},
-	  'minter': accounts[5]
+	  'minter': accounts[5],
+	  'bookEscrow': {'b0b1': 0},
       }
     break
     case 'CryptoBears':
@@ -153,11 +154,11 @@ async function actualState(token, state, accounts, name) {
       values = [
 	  await token.ownerOf.call(420010),
 	  await token.ownerOf.call(420011),
-	  await token.ownerOf.call(2),
-	  await token.ownerOf.call(3),
-	  await token.ownerOf.call(4),
-	  //(await token.call.getOwner(accounts[5])).toNumber(),
-	  await token._minter.call(),	  
+	  await token.ownerOf.call(420012),
+	  await token.ownerOf.call(420013),
+	  await token.ownerOf.call(420014),
+	  await token._minter.call(),
+	  (await token.bookEscrow.call(accounts[5], accounts[3], 420013)).toNumber(),
     ]
     break
     case 'CryptoBears':

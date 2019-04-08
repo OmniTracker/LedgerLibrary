@@ -25,6 +25,8 @@ contract BookLedger is ERC721 {
   event escrowCommitted(address newOwner, uint256 escrowAmount );
   event bookReceived(bool transmissionComplete, string bookCondition );
 
+  event people(address msgSender, address owner);
+  event bookInTransmissionS2(address currentOwner, address tempOwner, uint256 bookID, bool InTransmission );
 
   struct Book {
     uint256 bookID;
@@ -155,6 +157,19 @@ contract BookLedger is ERC721 {
     {
       return _committed[sender][receiver][bookID];
     }
+    function bookEscrow ( address owner, address requester, uint256 bookID ) public view returns(uint256)
+    {
+      return _bookEscrow[owner][requester][bookID];
+    }
+    function accountEscrow ( address requester ) public view returns(uint256)
+    {
+      return _contractEscrow[requester];
+    }
+    function transmissionStatus( address owner, address requester, uint256 bookID ) public view returns(bool)
+    {
+      return _bookTransmission[owner][requester][bookID];
+    }
+	
     function bookExistInMapping ( address owner, uint256 bookID) view returns(bool)
     {
       return _books[owner][bookID].exist;
@@ -247,30 +262,32 @@ contract BookLedger is ERC721 {
    */
    function requestBook ( address owner, uint256 bookID ) exists(bookID) public
    {
+
+     emit people( msg.sender, owner);
      // You should not be able to request a book that you are the owner of
-     require( !_books[msg.sender][bookID].exist );
+     //require( !_books[msg.sender][bookID].exist );
 
      // The requester should not be able to request a book from itself
-     require( msg.sender != owner );
+     //require( msg.sender != owner );
 
      // The book should currently be in the possesion of the library
-     require( _books[msg.sender][bookID].exist );
+     //require( _books[msg.sender][bookID].exist );
 
      // The book should not be in transmission or currently committed to an
      // transaction.
-     require( !isBookCommitted( msg.sender, owner, bookID ));
-     require( !isBookInTransmission( msg.sender, owner, bookID ));
+     //require( !isBookCommitted( msg.sender, owner, bookID ));
+     //require( !isBookInTransmission( msg.sender, owner, bookID ));
 
    }
 
    /**
-      Sender commits an escrow value for receiver to deposit to the contract
+      Sender establishes an escrow value for receiver to deposit to the contract
       as a security deposit should something happen to the book
 
       sender: entity that currently owns book, eg. librarian
       receiver: entity requesting book from sender, eg bibliophile
     */
-   function commitBook( address sender, address receiver, uint256 bookID, uint256 escrow ) exists(bookID) private {
+   function commitBook ( address sender, address receiver, uint256 bookID, uint256 escrow ) exists(bookID) public {
 
        _bookEscrow[sender][receiver][bookID] = escrow;
        _committed[sender][receiver][bookID] = true;
@@ -284,7 +301,7 @@ contract BookLedger is ERC721 {
       sender: entity that currently owns book, eg. librarian
       receiver: entity requesting book from sender, eg bibliophile
     */
-   function commitEscrow( address sender, address receiver, uint256 bookID, uint256 escrow ) private {
+   function commitEscrow ( address sender, address receiver, uint256 bookID, uint256 escrow ) public {
 
        _contractEscrow[receiver] = escrow;
        _committed[receiver][sender][bookID] = true;       
@@ -335,7 +352,7 @@ contract BookLedger is ERC721 {
 	currentOwner: owns bookID
 	tempOwner: temporary owner of bookID
      */
-    function checkoutBook ( address currentOwner, address tempOwner, uint256 bookID ) exists(bookID) {
+    function checkoutBook ( address currentOwner, address tempOwner, uint256 bookID ) exists(bookID) public {
 
       // the temporary owner checking out the book should have an escrow being held
       // by the contract greater than or equal to the book value set by the current
@@ -347,13 +364,14 @@ contract BookLedger is ERC721 {
       require( _committed[tempOwner][currentOwner][bookID] );
 
       _bookTransmission[currentOwner][tempOwner][bookID] = true;
-      
+
+      emit bookInTransmissionS2( currentOwner, tempOwner, bookID, true );
     }
 
     /** acceptBook
       * book has been shipped and received by new or tempOwner
       */
-    function acceptBook( address currentOwner, address newOwner, uint256 bookID, string condition ) exists(bookID) {
+    function acceptBookS2( address currentOwner, address newOwner, uint256 bookID, string condition ) exists(bookID) {
 
 	// book no longer in transmission
       _bookTransmission[currentOwner][newOwner][bookID] = false;
