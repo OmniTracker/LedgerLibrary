@@ -14,7 +14,7 @@ contract BookLedger is ERC721 {
 
   event ledgerCreated(address book);
   event entityInitialized(address owner);
-  event bookRemoved();
+  event bookRequested();
   event bookAdded(string publisher, string author, string name );
   event bookRemoved(string publisher, string author, string name );
   event archivingBook(string publisher, string author, string name );
@@ -89,7 +89,7 @@ contract BookLedger is ERC721 {
      properties of the book for sharing
    */
    function newBook ( address owner,
-		      uint256 bookID,
+		                  uint256 bookID,
                       uint256 genre,
                       string country,
                       string publisher,
@@ -110,24 +110,27 @@ contract BookLedger is ERC721 {
        name: name,
        exist: true
 	 }); // also initialized with exist: true
-     
-     uint256 bookPointer = _booksList[owner].push(bookID) - 1;
-     book.bookPointer = bookPointer;
-     _books[owner][bookID] = book;
-     // Flag to signal that a book currenly exist in a mapping. Solidity initialize
-     // all data to zero, so if we were to delete book from a mapping, this would
-     // be the easiest way to make this check because this value will be set to
-     // zero, or false, if it doesn't exist in the mapping.
-     //_books[owner][bookID].exist = true;  // established as true in initialized Book
-     /* Mint new book to the library */
-     _mint(owner, bookID);
-     emit bookAdded(_books[owner][bookID].publisher, _books[owner][bookID].author, _books[owner][bookID].name);
-     return bookID;
+      // Require the book id does not exist. This is the easiest way to check if
+      // the book has already been added to the specified mapping
+      require(!_books[owner][bookID].exist);
+      uint256 bookPointer = _booksList[owner].push(bookID) - 1;
+      book.bookPointer = bookPointer;
+      _books[owner][bookID] = book;
+      /* Mint new book to the library */
+      _mint(owner, bookID);
+      // Flag to signal that a book currenly exist in a mapping. Solidity initialize
+      // all data to zero, so if we were to delete book from a mapping, this would
+      // be the easiest way to make this check because this value will be set to
+      // zero, or false, if it doesn't exist in the mapping.
+      _books[owner][bookID].exist = true;  // established as true in initialized Book
+      _books[owner][bookID].availability = true;
+      emit bookAdded(_books[owner][bookID].publisher, _books[owner][bookID].author, _books[owner][bookID].name);
+      return bookID;
    }
    /**
     * Get origin date of book being placed in library.
     */
-   function originDateOfBook ( address owner, uint256 bookID )
+    function originDateOfBook ( address owner, uint256 bookID )
       external exists(bookID) view returns(uint256)
     {
 	     return _books[owner][bookID].timeOfOrigin;
@@ -169,7 +172,7 @@ contract BookLedger is ERC721 {
     {
       return _bookTransmission[owner][requester][bookID];
     }
-	
+
     function bookExistInMapping ( address owner, uint256 bookID) view returns(bool)
     {
       return _books[owner][bookID].exist;
@@ -257,27 +260,25 @@ contract BookLedger is ERC721 {
    *  Request book from the library.
       msg.sender is the entity requesting to trade or checkout a book
       owner is the current owner of the book; the library
-      If all statements pass, LibraryApp will contact owner that 
+      If all statements pass, LibraryApp will contact owner that
       msg.sender is requesting a book
    */
    function requestBook ( address owner, uint256 bookID ) exists(bookID) public
    {
-
      emit people( msg.sender, owner);
      // You should not be able to request a book that you are the owner of
-     //require( !_books[msg.sender][bookID].exist );
-
+     require(_books[owner][bookID].exist);
      // The requester should not be able to request a book from itself
-     //require( msg.sender != owner );
-
+     require(msg.sender != owner);
      // The book should currently be in the possesion of the library
-     //require( _books[msg.sender][bookID].exist );
-
+     require(isBookAvailable(owner,bookID));
      // The book should not be in transmission or currently committed to an
      // transaction.
-     //require( !isBookCommitted( msg.sender, owner, bookID ));
-     //require( !isBookInTransmission( msg.sender, owner, bookID ));
-
+     require(!isBookCommitted(msg.sender, owner, bookID));
+     require(!isBookInTransmission( msg.sender, owner, bookID));
+     // Should set mapping that book has been requested and another person should
+     // not be able to take the book out from the library until this transaction
+     // is complete.
    }
 
    /**
@@ -288,12 +289,20 @@ contract BookLedger is ERC721 {
       receiver: entity requesting book from sender, eg bibliophile
     */
    function commitBook ( address sender, address receiver, uint256 bookID, uint256 escrow ) exists(bookID) public {
-
-       _bookEscrow[sender][receiver][bookID] = escrow;
-       _committed[sender][receiver][bookID] = true;
-       
+     // Require the sender of the book is the only one who is able to commit the book.
+     require(sender == msg.sender);
+     // Require the book exist. If the book does not exist, this function should revert.
+     require(_books[msg.sender][bookID].exist);
+     // The book should not be in transmission or currently committed to an
+     // transaction.
+     require(!isBookCommitted( sender, receiver, bookID));
+     require(!isBookInTransmission( sender, receiver, bookID));
+     // Set book escrow value.
+     _bookEscrow[sender][receiver][bookID] = escrow;
+     // Set book as being commited
+     _committed[sender][receiver][bookID] = true;
    }
-   
+
    /**
       Sender commits an escrow value for receiver to deposit to the contract
       as a security deposit should something happen to the book
@@ -302,14 +311,22 @@ contract BookLedger is ERC721 {
       receiver: entity requesting book from sender, eg bibliophile
     */
    function commitEscrow ( address sender, address receiver, uint256 bookID, uint256 escrow ) public {
-
-       _contractEscrow[receiver] = escrow;
-       _committed[receiver][sender][bookID] = true;       
-
-       emit escrowCommitted( receiver, escrow );
-       
+     // require the set book escrow for the book is greater than zero. This contract
+     // must require some sort of of deposit is set for the book.
+     require(_bookEscrow[sender][receiver][bookID] > 0); // It may be a good idea to have an internal variable that set a min escrow value.
+     // require the bookEscrow set is equal to the amount passed into this function.
+     require(_bookEscrow[sender][receiver][bookID] == escrow);
+     // require the book has already been commited by the library, but not currently
+     // in transmission
+     require(isBookCommitted( sender, receiver, bookID));
+     require(!isBookInTransmission( sender, receiver, bookID));
+     // Set escrow recieved by the person.
+     _contractEscrow[receiver] = escrow;
+     // Set that the received is not commited to recieving the book
+     _committed[receiver][sender][bookID] = true;
+     // Emit signal stating that the escrow for the transmission has been recieved.
+     emit escrowCommitted( receiver, escrow );
    }
-   
   /**
     * Accept that the book is currently in your possesion. Check how the book
     * should being transfered, then handle accepting the book based off this
@@ -320,51 +337,64 @@ contract BookLedger is ERC721 {
       // The person recieving the book should be the only one who should be able
       // to accept the book.
       require(msg.sender == receiver);
-
       // Check to make sure the book is in the process of being transfer between the
       // two users.
       require(isBookCommitted(sender,receiver,bookID));
       require(isBookInTransmission(sender,receiver,bookID));
-
       // A user should not be able to transferbook to themself
       require(sender != receiver);
-
       // After the book is accepted, transfer ownership of the book
-      transferBook(sender, receiver, bookID );
-
+      // TO DO. We still have not figured out if we will transfer ownership of
+      // the book at this point in time.
+      //
+      //
+      //
       // After books have been succefully accepted, reset mappings to false
       _committed[sender][receiver][bookID] = false;
       _bookTransmission[sender][receiver][bookID] = false;
-
       // If the receiver of the book is equal to the minter, the book availability
       // can then be marked so signal that book can be removed from the library
       // again.
       if (receiver == _minter)
       {
-        _books[receiver][bookID].exist = true;
+        _books[receiver][bookID].availability = true;
       }
     }
-
     /** Checkout book
-	trade a book without changing ownership
-	Once both have committed, the currentOwner must ship the book the the temporary owner
-
-	currentOwner: owns bookID
-	tempOwner: temporary owner of bookID
-     */
+	    * trade a book without changing ownership
+	    * Once both have committed, the currentOwner must ship the book the the
+      * temporary owner
+      *
+	    * currentOwner: owns bookID
+	    * tempOwner: temporary owner of bookID
+      */
     function checkoutBook ( address currentOwner, address tempOwner, uint256 bookID ) exists(bookID) public {
-
       // the temporary owner checking out the book should have an escrow being held
       // by the contract greater than or equal to the book value set by the current
       // owner
-      require( _contractEscrow[tempOwner] >= _bookEscrow[currentOwner][tempOwner][bookID]);
-
+      require(_contractEscrow[tempOwner] == _bookEscrow[currentOwner][tempOwner][bookID]);
       // both the current owner and new owner should have committed
-      require( _committed[currentOwner][tempOwner][bookID] );
-      require( _committed[tempOwner][currentOwner][bookID] );
-
+      require(isBookCommitted(currentOwner,tempOwner,bookID));
+      require(isBookCommitted(tempOwner,currentOwner,bookID));
+      // both the current owner and new owner should have not set the book in transmission
+      require(!isBookInTransmission(currentOwner,tempOwner,bookID));
+      require(!isBookInTransmission(tempOwner,currentOwner,bookID));
+      // require that the current owner of the book is the minter. The minter
+      // for this application is eqaul to the librarian
+      require(_minter == currentOwner);
+      // require the book to exist. If the book does not exist, then the book cannot be
+      // checked out.
+      require(_books[currentOwner][bookID].exist);
+      // require the book to be available
+      require(isBookAvailable(currentOwner,bookID));
+      // Set the book as being in transmission.
       _bookTransmission[currentOwner][tempOwner][bookID] = true;
-
+      _bookTransmission[tempOwner][currentOwner][bookID] = true;
+      // Set the book as not being available. This will make it so someone else, can
+      // try to get the book out of the library once the book is checked out. Once the
+      // book is return to the library, this value should be set to true again.
+      _books[currentOwner][bookID].availability = false;
+      // Emit that the book is currently in transmission
       emit bookInTransmissionS2( currentOwner, tempOwner, bookID, true );
     }
 
@@ -373,12 +403,12 @@ contract BookLedger is ERC721 {
       */
     function acceptBookS2( address currentOwner, address newOwner, uint256 bookID, string condition ) exists(bookID) {
 
-	// book no longer in transmission
+	     // book no longer in transmission
       _bookTransmission[currentOwner][newOwner][bookID] = false;
 
       emit bookReceived( true, condition );
     }
-    
+
     /**
       * Trade Book. Trade book will allow one user to trade books with another
       * user without resubmitting the book to the library. This function should
@@ -397,7 +427,7 @@ contract BookLedger is ERC721 {
       _committed[owner1][owner2][bookID1] = true;
       _committed[owner2][owner1][bookID2] = true;
     }
-    
+
     /**
       * Transfer Book. transfer book will allow one user to trade books with another
       * user without resubmitting the book to the library. This function should
@@ -410,7 +440,7 @@ contract BookLedger is ERC721 {
       transferFrom(sender,receiver,bookID);
       // Update book ownership mappings
     }
-    
+
   /**
     * If a book is lost in transmission or by a user, this function should be called
     * to clear out any transaction information for the given book. Once this
@@ -425,7 +455,7 @@ contract BookLedger is ERC721 {
       // Cannot lose the same book twice, so will not allow the book to
       // be re added to the lost book list.
        require( !_lostBooksList[bookID] );
-       
+
        // Set the book as lost
        _lostBooksList[bookID] = true;
 
@@ -434,45 +464,5 @@ contract BookLedger is ERC721 {
 
        // Broadcast that the book has been lost and added to the lost book queue
        emit bookReportedLost(true, bookID);
-    }
-
-  /**
-    * Commit to removing book from the library ledger or began transfering book
-    * to another user. The only one who can make the commitment of the book
-    * is the owner of the book.
-    */
-    function setBookInTransmission ( address sender,
-                                     address receiver,
-                                     uint256 bookID )
-                                     exists(bookID) public
-    {
-      // The send of the book should be the only one able to send the book.
-      require(sender == msg.sender);
-
-      // The book must already be committed.
-      require(isBookCommitted(sender, receiver, bookID));
-
-      // The book should not already be marked as in transmission.
-      require(!isBookInTransmission( sender, receiver, bookID ) );
-
-      // The book should exist in the mapping for the given user before allowing
-      // book to begin transmission.
-      require(_books[sender][bookID].exist);
-
-      // Set book in transmission flag to signal that the book is currently
-      // travaling to it designated location.
-      _bookTransmission[sender][receiver][bookID] == true;
-
-      // If the sender of this message is equal to the _minter or the library,
-      // then set the book as not available.
-      if ( sender == _minter)
-      {
-        _books[sender][bookID].availability = false;
-      }
-
-      // Emit signal book is currently in transmission
-      emit bookInTransmission(_books[sender][bookID].publisher,
-                              _books[sender][bookID].author,
-                              _books[sender][bookID].name);
     }
 }
