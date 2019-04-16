@@ -129,12 +129,12 @@ contract('ERC721MinimalTests', async function (accounts) {
         console.log("Librarian has sent out book to Bob?", bookInTransmission2)
 
         // confirm Alice received book
-        await bookLedger.acceptBook( accounts[5], accounts[3], 420013, {from: accounts[3]} )
+      await bookLedger.acceptBook( accounts[5], accounts[3], 420013, "Great!", {from: accounts[3]} )
         let bookReceived1 = await bookLedger.transmissionStatus(accounts[5], accounts[3], 420013)
         console.log("Is book still in transmission after Alice confirmed acceptance of the book?", bookReceived1)
 
         // confirm Bob recieved book
-        await bookLedger.acceptBook( accounts[5], accounts[4], 420014, {from: accounts[4]} )
+      await bookLedger.acceptBook( accounts[5], accounts[4], 420014, "Good", {from: accounts[4]} )
         let bookReceived2 = await bookLedger.transmissionStatus(accounts[5], accounts[4], 420014)
         console.log("Is book still in transmission after Bob confirmed acceptance of the book?", bookReceived2)
 
@@ -156,8 +156,11 @@ contract('ERC721MinimalTests', async function (accounts) {
   })
 
 
-  it('should checkout book', async function () {
+  it('should checkout book and return in good faith', async function () {
 
+    // accounts[5] = librarian
+    // accounts[3] = Alice
+      
     // Add book for librarian
     await bookLedger.newBook(accounts[5], 420013, 4, 'United States', 'Doubleday', 'Dan Simmons', 'Hyperion',{from: accounts[5]} )
     assert.equal(await bookLedger.numberOfBookInLibrary( accounts[5] ), 1)
@@ -184,10 +187,21 @@ contract('ERC721MinimalTests', async function (accounts) {
     console.log("Librarian has sent out book to Alice?", bookInTransmission)
 
     // confirm Alice received book
-    await bookLedger.acceptBookS2( accounts[5], accounts[3], 420013, 'great', {from: accounts[3]} )
+    await bookLedger.acceptBook( accounts[5], accounts[3], 420013, "Great", {from: accounts[3]} )
     let bookReceived = await bookLedger.transmissionStatus(accounts[5], accounts[3], 420013)
     //assert( await bookLedger.transmissionStatus(accounts[5], accounts[3], 420013), false) //failing, why?
     console.log("Is book still in transmission after Alice confirmed acceptance of the book?", bookReceived)
+
+    // Alice has finished reading book and sends it back to the library
+    await bookLedger.returnBook( accounts[5], accounts[3], 420013, "Great", {from: accounts[3]} )
+    let bookInTransmissionReturned = await bookLedger.transmissionStatus(accounts[3], accounts[5], 420013)
+    console.log("Is book in transmission after Alice has read the book on its way back to the library?", bookInTransmissionReturned)
+
+    // Library accepts book Alice sent back
+    // transaction is complete
+    await bookLedger.acceptReturnedBook( accounts[5], accounts[3], 420013, "Great", {from: accounts[5]} )
+    console.log("Alice has successfully returned the book and the library has put it back on the self")
+
 
     // Expected state Changes
     let bookLedgerStateChanges = [
