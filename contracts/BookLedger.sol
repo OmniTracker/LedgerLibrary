@@ -9,6 +9,7 @@ import "./Support/SafeMath.sol";
 Every User/address/entity has a library of books. Calling this contract is
 equivalent to creating their own library.
 
+
  */
 contract BookLedger is ERC721 {
   string public constant contractName = 'BookLedger';
@@ -36,6 +37,7 @@ contract BookLedger is ERC721 {
     string author;
     string name;
     bool exist;
+    address holder;
   }
 
   address[] public _entity;
@@ -62,14 +64,14 @@ contract BookLedger is ERC721 {
   mapping(address => uint256) internal _contractEscrow;
 
   address public _minter;
-  uint256 public _startBalance;
+  uint256 public _minEscrow;
+  
   constructor(
     address minter,
-    uint256 startBalance
+    uint256 minEscrow
   ) public {
       _minter = minter;
-      //_wallet = minter;
-      _startBalance = startBalance;
+      _minEscrow = minEscrow;
   }
   modifier onlyMinter() {
     require(msg.sender == _minter, "msg.sender is not _minter.");
@@ -104,7 +106,8 @@ contract BookLedger is ERC721 {
        publisher: publisher,
        author: author,
        name: name,
-       exist: true
+       exist: true,
+       holder: owner
 	 });
       // Require the book id does not exist. This is the easiest way to check if
       // the book has already been added to the specified mapping
@@ -124,6 +127,15 @@ contract BookLedger is ERC721 {
 
    
    /** Public view functions
+
+    Common tests for property of book
+     - book.exists
+     - exists(bookID)
+     - isBookAvailable(owner, bookID)
+     - isBookCommitted(sender, receiver, bookID)
+     - transmissionStatus(owner, requester, bookID)
+     - accountEscrow(requester) 
+     - bookEscrow(owner, requester, bookID)
     */
    
    /** Get origin date of book being placed in library. */
@@ -188,7 +200,7 @@ contract BookLedger is ERC721 {
      
      // You should not be able to request a book that you are the owner of
      // Question: is this necessary?
-     //require(_books[owner][bookID].exist);
+     require(_books[owner][bookID].exist);
      
      // The requester should not be able to request a book from itself
      require(msg.sender != owner);
@@ -220,9 +232,8 @@ contract BookLedger is ERC721 {
      
      // The book should not be in transmission or currently committed to an
      // transaction.
-     // Question: Already checked in requestBook?
-     //require(!isBookCommitted( sender, receiver, bookID));
-     //require(!transmissionStatus( sender, receiver, bookID));
+     require(!isBookCommitted( sender, receiver, bookID));
+     require(!transmissionStatus( sender, receiver, bookID));
      
      // Set book escrow value.
      _bookEscrow[sender][receiver][bookID] = escrow;
@@ -239,15 +250,14 @@ contract BookLedger is ERC721 {
       receiver: entity requesting book from sender, eg bibliophile
     */
    function commitEscrow ( address sender, address receiver, uint256 bookID, uint256 escrow ) public {
-     // require the set book escrow for the book is greater than zero. This contract
+     // require the set book escrow for the book is greater than the minimum escrow
+     // defined when the contract was created.
      // must require some sort of deposit is set for the book.
-     // Question: It may be a good idea to have an internal variable that set a min escrow value.       
-     // Question: It's possible two entities may be willing to have a security deposit of 0.
-     // But it should definitely not be negative
-     require(_bookEscrow[sender][receiver][bookID] >= 0); 
+     require(_bookEscrow[sender][receiver][bookID] >= _minEscrow); 
      
      // require the bookEscrow set is equal to the amount passed into this function.
-     // Question: Will we always want these values to be equal? Would greater than or equal be sufficient?
+     // Question: Will we always want these values to be equal? Would greater
+     // than or equal be sufficient?
      require(_bookEscrow[sender][receiver][bookID] == escrow);
      
      // require the book has already been commited by the library, but not currently
@@ -291,24 +301,27 @@ contract BookLedger is ERC721 {
       // for this application is eqaul to the librarian
       // Question: Why do we want this? I'm confused as to the importance of minter
       require(_minter == currentOwner);
+      
       // require the book to exist. If the book does not exist, then the book cannot be
       // checked out.
       // Question: Isn't this handled by the modifier exists()?
-      //require(_books[currentOwner][bookID].exist);
+      require(_books[currentOwner][bookID].exist);
       
       // require the book to be available
       // Question: Redundant?
       require(isBookAvailable(currentOwner,bookID));
+
+      // Update the owners book 
       
       // Set the book as being in transmission.
       // Question: One way or two way?
       _bookTransmission[currentOwner][tempOwner][bookID] = true;
-      //_bookTransmission[tempOwner][currentOwner][bookID] = true;
+      //_bookTransmission[tempOwner][currentOwner][bookID] = true;      
       
-      // Set the book as not being available. This will make it so someone else, can
-      // try to get the book out of the library once the book is checked out. Once the
-      // book is return to the library, this value should be set to true again.
+      // Set the book as not being available as it is now being loaned out.
+      // also set the holder to the tempOwner
       _books[currentOwner][bookID].availability = false;
+      _books[currentOwner][bookID].holder = tempOwner;
       
       // Emit that the book is currently in transmission
       emit bookInTransmission( currentOwner, tempOwner, bookID, true );
@@ -374,16 +387,25 @@ contract BookLedger is ERC721 {
     }
 
     /** Confirm receipt of loaned book, reset book availability, and
-     *  refund escrow
+     *  refund escrow. 
      *  originalOwner: address that originally owned the book and loaned it to tempOwner
      *  tempOwner: the reader that took out the book from the originalOwner
     */
-    function acceptReturnedBook( address originalOwner, address tempOwner, uint256 bookID, string condition ) public exists(bookID) {
+    function archiveBook( address originalOwner, address tempOwner, uint256 bookID, string condition ) public exists(bookID) {
+
+       // Only the library should be able to place the book back into the archive
+       require(msg.sender == _minter && msg.sender == originalOwner);
+       
+       // check transmission status and book availability are in expected positions
+       require(!isBookAvailable(originalOwner, bookID));
+       require(transmissionStatus(originalOwner, tempOwner, bookID));
+       
 	// reset transmission status
 	_bookTransmission[tempOwner][originalOwner][bookID] = false;
 
-	// reset book availability
+	// reset book availability and the holder of the book
 	_books[originalOwner][bookID].availability = true;
+	_books[originalOwner][bookID].holder = originalOwner;	
 
 	// The book has successfully been returned to the rightful owner.
 	// Refund the escrow to the temporary owner (here the sender)
@@ -394,8 +416,10 @@ contract BookLedger is ERC721 {
      * After the book has been returned to the library or the trade is complete,
      * refund the escrow amount to the requester
      */
-    function refundEscrow( address originalOwner, address tempOwner, uint256 bookID ) public exists(bookID) {
+    function refundEscrow( address originalOwner, address tempOwner, uint256 bookID ) private exists(bookID) {
 
+	// require 
+	
 	// decrease the contracts escrow for the tempOwner
 	uint256 refund_escrow = _bookEscrow[originalOwner][tempOwner][bookID];
 	_contractEscrow[tempOwner] = _contractEscrow[tempOwner].sub(_bookEscrow[originalOwner][tempOwner][bookID]);
@@ -438,25 +462,6 @@ contract BookLedger is ERC721 {
     }
     
   /**
-    * Signal that the book has physically been returned to the library. The library
-    * should provide the address to the former owner of the book then adjust the
-    * mapping associated with this book and the former owner. The previous owner,
-    * of the book should not be allowed to archive the book back into the library.
-    * Before this function call is made, the book should have already gone through
-    * the transmission process to signal that it has travelled back to the library.
-    */
-   function archiveBook( address oldOwner, uint256 bookID, string condition ) exists(bookID) public
-   {
-     // Only the library should be able to place the book back into the archive
-     require(msg.sender == _minter);
-     // The current owner of the book should not be the same as the library.
-     // The library should be
-     require(msg.sender != oldOwner);
-     //
-     acceptBook (oldOwner, _minter, bookID, condition);
-   }
-
-  /**
     * If a book is lost in transmission or by a user, this function should be called
     * to clear out any transaction information for the given book. Once this
     * information is cleared, the book is then burned and removed from the
@@ -475,17 +480,32 @@ contract BookLedger is ERC721 {
        _lostBooksList[bookID] = true;
 
        // Remove the book from circulation.
-       removeBook( owner, bookID );
+       removeBook( owner, bookID, false );
 
        // Broadcast that the book has been lost and added to the lost book queue
        emit bookIsLost(true, bookID);
     }
+
+    /*
+    function updateBooksList( address originalOwner, address newOwner, uint256 bookID, bool permanence )
+    public exists(bookID) returns(bool)
+    {
+	// get book of the original Owner
+	memory book = _books[originalOwner][bookID];
+	uint256 bookPointer = _booksList[newOwner].push(bookID) - 1;
+	book.bookPointer = bookPointer;
+	_books[newOwner][bookID] = book;
+
+	// permanence means to remove the book from
+	removeBook(originalOwner, bookID, permanence, false);
+	}*/
+	
     
   /**
    * Remove book from the library
    * @param bookID The unique ID of the book in the library.
    */
-   function removeBook( address owner, uint256 bookID )
+    function removeBook( address owner, uint256 bookID, bool burn )
    public exists(bookID) returns(bool)
    {
      // The only one who should be able to remove a book is the library or the
@@ -503,13 +523,14 @@ contract BookLedger is ERC721 {
      _books[owner][keyToMove].bookPointer = rowToDelete;
      _booksList[owner].length--;
 
-     // Delete the book from the _books mapping. We don't need this information
-     // since the book has been removed from circulation.
-     delete _books[owner][bookID];
-
-     _burn(owner, bookID);
+     // up to here the function satisfies if the book is put in the lost
+     // state. if burn == true, then remove it from circulation
+     if( burn ) {
+	 delete _books[owner][bookID];
+	 _burn(owner, bookID);
+     }
+     
      return true;
    }
    
-    
 }

@@ -1,3 +1,26 @@
 
  list of Users permits iterating over the list to see all users
 preferable to have a list of users that can then map address to users list of books
+
+** mapping updates
+
+ loan book 
+ Lorelai books[] = book, availability = false, holder = Alice
+ Lorelai booksList[] = [book]
+ Alice books[] = 0
+ Alice booksList = 0
+ 
+ trade book 
+ Lorelai books[] = 0
+ Lorelai booksList[] = 0
+ Alice books[] = book, availability = false, holder = Alice
+ Alice booksList = [book]
+
+ lost book
+ books[] availability = false
+ lostBooksList = book
+ remove booksList[]
+
+ burn book
+ remove books[]
+ remove booksList[]

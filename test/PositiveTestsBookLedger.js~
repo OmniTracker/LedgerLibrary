@@ -9,14 +9,14 @@ const checkEvent = utils.checkEvent
 const zero40 = utils.zero40
 const pause = utils.pause
 
-const startBalance = 100
+const minEscrow = 0
 const rentalInterval = 200
 
-contract('ERC721MinimalTests', async function (accounts) {
+contract('BookLedgerPositiveTests', async function (accounts) {
 
   beforeEach('Make fresh contract', async function () {
     bookLedger = await BookLedger.new( // We let accounts[5] represent the minter.
-      accounts[5], startBalance)
+      accounts[5], minEscrow)
   })
 
   it('should have correct initial state', async function () {
@@ -66,8 +66,8 @@ contract('ERC721MinimalTests', async function (accounts) {
     assert.equal(await bookLedger.numberOfBookInLibrary( accounts[5] ), 2)
 
       // Remove first book
-    //let removeBook = await bookLedger.removeBook(accounts[0], bookID_1)
-    await bookLedger.removeBook(accounts[5], bookID_1, {from:accounts[5]} )
+    //let removeBook = await bookLedger.removeBook(accounts[0], bookID_1, true)
+    await bookLedger.removeBook(accounts[5], bookID_1, true, {from:accounts[5]} )
     //console.log("number of books after adding two books and removing one book", await bookLedger.numberOfBookInLibrary( accounts[0] ))
     assert.equal(await bookLedger.numberOfBookInLibrary( accounts[5] ), 1)
 
@@ -199,7 +199,7 @@ contract('ERC721MinimalTests', async function (accounts) {
 
     // Library accepts book Alice sent back
     // transaction is complete
-    await bookLedger.acceptReturnedBook( accounts[5], accounts[3], 420013, "Great", {from: accounts[5]} )
+    await bookLedger.archiveBook( accounts[5], accounts[3], 420013, "Great", {from: accounts[5]} )
     console.log("Alice has successfully returned the book and the library has put it back on the self")
 
 
