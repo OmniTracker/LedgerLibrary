@@ -27,11 +27,11 @@ contract('NegativeTestsBookLedger', async function (accounts) {
   it('should not request book not in existence', async function() {
 
     // add a book
-    await bookLedger.newBook(accounts[5], 420013, 4, 'United States', 'Doubleday', 'Dan Simmons', 'Hyperion',{from: accounts[5]} )    
+    await bookLedger.newBook(accounts[5], 420013, 4, 'United States', 'Doubleday', 'Dan Simmons', 'Hyperion',{from: accounts[5]} )
 
     // request a book
     await expectRevert(bookLedger.requestBook( accounts[5], 420010, {from: accounts[3]} ))
-      
+
     // Expected state Changes
     let bookLedgerStateChanges = [
 	{
@@ -42,7 +42,28 @@ contract('NegativeTestsBookLedger', async function (accounts) {
 
     // Check state after done
     await checkState([bookLedger], [bookLedgerStateChanges], accounts)
-	
+
+  })
+
+
+  it('should not add a book that already exist existence', async function() {
+
+
+    // add a book
+    await bookLedger.newBook(accounts[5], 420013, 4, 'United States', 'Doubleday', 'Dan Simmons', 'Hyperion',{from: accounts[5]} )
+
+    // add same book
+    await expectRevert(bookLedger.newBook(accounts[5], 420013, 4, 'United States', 'Doubleday', 'Dan Simmons', 'Hyperion',{from: accounts[5]} ))
+
+    // Expected state Changes
+    let bookLedgerStateChanges = [
+	{
+	    'var': 'ownerOf.b0', 'expect': zero40,
+	    'var': 'ownerOf.b3', 'expect': accounts[5]
+	}
+    ]
+
+
   })
 
 
