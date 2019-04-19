@@ -27,7 +27,6 @@ contract('PositiveTestsBookLedger', async function (accounts) {
   })
 
   it('should check add book', async function () {
-
     // Add first book
     assert.equal(await bookLedger.numberOfBookInLibrary( accounts[5] ), 0)
     let bookID_1 = (await bookLedger.newBook.call(accounts[5], 420010, 0,'Canada','Blueno','Jane Doe','Living Fiction',{from: accounts[5]} )).toNumber()
@@ -35,43 +34,36 @@ contract('PositiveTestsBookLedger', async function (accounts) {
     await bookLedger.newBook(accounts[5], 420010, 0,'Canada','Blueno','Jane Doe','Living Fiction',{from: accounts[5]} )
     console.log("Number of books after adding first book", await bookLedger.numberOfBookInLibrary( accounts[5] ))
     assert.equal(await bookLedger.numberOfBookInLibrary( accounts[5] ), 1)
-
     // Add second book
     let bookID_2 = (await bookLedger.newBook.call(accounts[5], 420011,0,'USA','Watson','John Doe','Bears on Ice',{from: accounts[5]} )).toNumber()
     assert.equal(bookID_2, 420011)
     await bookLedger.newBook(accounts[5], 420011,0,'USA','Watson','John Doe','Bears on Ice',{from: accounts[5]} )
     console.log("Number of books after adding second book", await bookLedger.numberOfBookInLibrary( accounts[5] ))
     assert.equal(await bookLedger.numberOfBookInLibrary( accounts[5] ), 2)
-
     // Expected state Changes
     let bookLedgerStateChanges = [
 	{'var': 'ownerOf.b0', 'expect': accounts[5]},
 	{'var': 'ownerOf.b1', 'expect': accounts[5]}
     ]
-
     // Check state after done
     await checkState([bookLedger], [bookLedgerStateChanges], accounts)
   })
 
   it('should remove book', async function () {
-
     // Add first book
     assert.equal(await bookLedger.numberOfBookInLibrary( accounts[5] ), 0)
     let bookID_1 = (await bookLedger.newBook.call(accounts[5], 420010, 0,'Canada','Blueno','Jane Doe','Living Fiction',{from: accounts[5]} )).toNumber()
     assert.equal(bookID_1, 420010)
     await bookLedger.newBook(accounts[5], 420010, 0,'Canada','Blueno','Jane Doe','Living Fiction',{from: accounts[5]} )
     assert.equal(await bookLedger.numberOfBookInLibrary( accounts[5] ), 1)
-
     // Add second book
     let bookID_2 = (await bookLedger.newBook.call(accounts[5], 420011,0,'USA','Watson','John Doe','Bears on Ice',{from: accounts[5]} )).toNumber()
     assert.equal(bookID_2, 420011)
     await bookLedger.newBook(accounts[5], 420011,0,'USA','Watson','John Doe','Bears on Ice',{from: accounts[5]} )
     assert.equal(await bookLedger.numberOfBookInLibrary( accounts[5] ), 2)
-
     // Remove first book
     await bookLedger.removeBook(accounts[5], bookID_1, true, {from:accounts[5]} )
     assert.equal(await bookLedger.numberOfBookInLibrary( accounts[5] ), 1)
-
     // Expected state Changes
     let bookLedgerStateChanges = [
 	{'var': 'ownerOf.b0', 'expect': zero40},
