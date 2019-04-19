@@ -157,57 +157,46 @@ contract('PositiveTestsBookLedger', async function (accounts) {
 
 
   it('should checkout book and return in good faith', async function () {
-
     // accounts[5] = librarian
     // accounts[3] = Alice
-
     // Add book for librarian
     await bookLedger.newBook(accounts[5], 420013, 4, 'United States', 'Doubleday', 'Dan Simmons', 'Hyperion',{from: accounts[5]} )
     assert.equal(await bookLedger.numberOfBookInLibrary( accounts[5] ), 1)
-
     // Alice request book from librarian
     await bookLedger.requestBook( accounts[5], 420013, {from: accounts[3]} )
-
     // confirm escrow amount set by librarian
     await bookLedger.commitBook( accounts[5], accounts[3], 420013, 300, {from: accounts[5]} )
     let bookEscrowAmount = (await bookLedger.bookEscrow.call( accounts[5], accounts[3], 420013 )).toNumber()
     assert( await bookLedger.bookEscrow( accounts[5], accounts[3], 420013 ), 300 )
     console.log("bookEscrow for checkoutBook", bookEscrowAmount)
-
     // confirm Alice meets escrow amount
     await bookLedger.commitEscrow( accounts[5], accounts[3], 420013, 300, {from: accounts[3]} )
     let accountEscrowAmount = (await bookLedger.accountEscrow.call( accounts[3] )).toNumber()
     assert( await bookLedger.accountEscrow( accounts[3] ), 300 )
     console.log("accountEscrow for checkoutBook", accountEscrowAmount)
-
     // confirm Librarian sent book by putting in transmission
     await bookLedger.checkoutBook( accounts[5], accounts[3], 420013, {from: accounts[5]} )
     let bookInTransmission = await bookLedger.transmissionStatus(accounts[5], accounts[3], 420013)
     assert( await bookLedger.transmissionStatus(accounts[5], accounts[3], 420013), true)
     console.log("Librarian has sent out book to Alice?", bookInTransmission)
-
     // confirm Alice received book
     await bookLedger.acceptBook( accounts[5], accounts[3], 420013, "Great", {from: accounts[3]} )
     let bookReceived = await bookLedger.transmissionStatus(accounts[5], accounts[3], 420013)
     //assert( await bookLedger.transmissionStatus(accounts[5], accounts[3], 420013), false) //failing, why?
     console.log("Is book still in transmission after Alice confirmed acceptance of the book?", bookReceived)
-
     // Alice has finished reading book and sends it back to the library
     await bookLedger.returnBook( accounts[5], accounts[3], 420013, "Great", {from: accounts[3]} )
     let bookInTransmissionReturned = await bookLedger.transmissionStatus(accounts[3], accounts[5], 420013)
     console.log("Is book in transmission after Alice has read the book on its way back to the library?", bookInTransmissionReturned)
-
     // Library accepts book Alice sent back
     // transaction is complete
     await bookLedger.archiveBook( accounts[5], accounts[3], 420013, "Great", {from: accounts[5]} )
     console.log("Alice has successfully returned the book and the library has put it back on the self")
-
     // Expected state Changes
     let bookLedgerStateChanges = [
 	{'var': 'ownerOf.b3', 'expect': accounts[5]},
 	{'var': 'bookEscrow.b0b1', 'expect': 300}
     ]
-
     // Check state after done
     await checkState([bookLedger], [bookLedgerStateChanges], accounts)
   })
