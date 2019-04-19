@@ -64,7 +64,10 @@ contract BookLedger is ERC721 {
   mapping(address => uint256) internal _contractEscrow;
 
   address public _minter;
-  uint256 public _minEscrow;
+  uint256 public _minEscrow; // Set the min escrow number
+  uint256 public _maxEscrow; // Limit the max escrow number
+
+  uint256 public _maxBookCount; // Limit the number of books a user can take out
 
   constructor(
     address minter,
@@ -213,6 +216,10 @@ contract BookLedger is ERC721 {
      // transaction.
      require(!isBookCommitted( msg.sender, owner, bookID));
      require(!transmissionStatus( msg.sender, owner, bookID));
+
+
+     // Question: Should probably put some code here to confirm that the book
+     // has been requested.
    }
 
    /**
@@ -264,6 +271,9 @@ contract BookLedger is ERC721 {
      // in transmission
      require(isBookCommitted( sender, receiver, bookID));
      require(!transmissionStatus( sender, receiver, bookID));
+
+     // Should force the book to be in the possesion of the library in order to update the
+     // escrow
 
      // Give the contract the escrow as security deposit
      _contractEscrow[receiver] = _contractEscrow[receiver].add(escrow);
@@ -365,6 +375,7 @@ contract BookLedger is ERC721 {
       // The current owner of the book should be the only one able to return the
       // book.
       // Question: Is this test necessary?
+      // Answer: Yes. You should
       require(sender == msg.sender);
 
       // The library should not return a book to themself

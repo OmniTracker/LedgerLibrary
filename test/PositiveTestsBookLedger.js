@@ -10,6 +10,9 @@ const zero40 = utils.zero40
 const pause = utils.pause
 
 const minEscrow = 0
+const maxEscrow = 1000
+const maxBookCount = 3
+
 const rentalInterval = 200
 
 contract('PositiveTestsBookLedger', async function (accounts) {
@@ -65,10 +68,8 @@ contract('PositiveTestsBookLedger', async function (accounts) {
     await bookLedger.newBook(accounts[5], 420011,0,'USA','Watson','John Doe','Bears on Ice',{from: accounts[5]} )
     assert.equal(await bookLedger.numberOfBookInLibrary( accounts[5] ), 2)
 
-      // Remove first book
-    //let removeBook = await bookLedger.removeBook(accounts[0], bookID_1, true)
+    // Remove first book
     await bookLedger.removeBook(accounts[5], bookID_1, true, {from:accounts[5]} )
-    //console.log("number of books after adding two books and removing one book", await bookLedger.numberOfBookInLibrary( accounts[0] ))
     assert.equal(await bookLedger.numberOfBookInLibrary( accounts[5] ), 1)
 
     // Expected state Changes
@@ -142,7 +143,6 @@ contract('PositiveTestsBookLedger', async function (accounts) {
         // Need to add code to test whether a book is transfered between two user without the help of the.
         // library.
 
-
         // Expected state Changes
         let bookLedgerStateChanges = [
     	{'var': 'ownerOf.b3', 'expect': accounts[5]},
@@ -160,7 +160,7 @@ contract('PositiveTestsBookLedger', async function (accounts) {
 
     // accounts[5] = librarian
     // accounts[3] = Alice
-      
+
     // Add book for librarian
     await bookLedger.newBook(accounts[5], 420013, 4, 'United States', 'Doubleday', 'Dan Simmons', 'Hyperion',{from: accounts[5]} )
     assert.equal(await bookLedger.numberOfBookInLibrary( accounts[5] ), 1)
@@ -201,7 +201,6 @@ contract('PositiveTestsBookLedger', async function (accounts) {
     // transaction is complete
     await bookLedger.archiveBook( accounts[5], accounts[3], 420013, "Great", {from: accounts[5]} )
     console.log("Alice has successfully returned the book and the library has put it back on the self")
-
 
     // Expected state Changes
     let bookLedgerStateChanges = [
