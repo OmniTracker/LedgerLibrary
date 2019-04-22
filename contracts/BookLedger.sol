@@ -5,11 +5,8 @@ import "./Support/SafeMath.sol";
 
 /**
  * This contract inherits from ERC721
-
-Every User/address/entity has a library of books. Calling this contract is
-equivalent to creating their own library.
-
-
+    Every User/address/entity has a library of books. Calling this contract is
+    equivalent to creating their own library.
  */
 contract BookLedger is ERC721 {
   string public constant contractName = 'BookLedger';
@@ -23,7 +20,6 @@ contract BookLedger is ERC721 {
   event bookInTransmission(address currentOwner, address tempOwner, uint256 bookID, bool InTransmission );
   event bookReceived(bool transmissionComplete, string bookCondition );
   event bookIsLost(bool bookLost, uint256 bookID);
-
 
   struct Book {
     uint256 bookID;
@@ -39,7 +35,6 @@ contract BookLedger is ERC721 {
     bool exist;
     address holder;
   }
-
 
   address[] public _entity;
   //address private _wallet; //wallet address set to minter.. Should be the contracts address
@@ -57,11 +52,11 @@ contract BookLedger is ERC721 {
 
   // mapping for whether book will be loaned or traded
   mapping(address => mapping(address => mapping(uint256 => bool))) internal _trade;
-  
+
   // Commit books for user. The indexing for this structure corresponds to the
   // address of the sender, receiver of the book, and the book ID
   mapping(address => mapping(address => mapping(uint256 => bool))) internal _committed;
-  
+
   // Will hold the transmission status of a book corresponding to the sender, receiver, and bookID
   // The book needs to be commited for transmission and the status must be updated
   // corresponding to how the book is being transmitted.
@@ -254,7 +249,7 @@ contract BookLedger is ERC721 {
      // is being traded
      // the trade is from the owner to the requester (msg.sender) for the book
      if( trade == true) {
-	 _trade[owner][msg.sender][bookID] = true;
+	      _trade[owner][msg.sender][bookID] = true;
      }
 
 
@@ -403,11 +398,11 @@ contract BookLedger is ERC721 {
       // trade the token now
       // remaining parameters updated in archiveBook
       if( _trade[sender][receiver][bookID] == true) {
-	  transferFrom(sender, receiver, bookID);
+	       transferFrom(sender, receiver, bookID);
       }
     }
     /**
-     * The book that was loaned is returned to the original owner. 
+     * The book that was loaned is returned to the original owner.
 
      */
     function returnBook( address originalOwner, address newOwner, uint256 bookID, string condition ) exists(bookID) public
@@ -470,20 +465,20 @@ contract BookLedger is ERC721 {
       // trade _books mapping if a trade
       if ( _trade[originalOwner][newOwner][bookID] == true ) {
 
-	  // get book of the original Owner, set data for
-	  // new Owner and update their bookList
-	  Book memory book = _books[originalOwner][bookID];
-	  uint256 bookPointer = _booksList[newOwner].push(bookID) - 1;
-	  book.bookPointer = bookPointer;
-	  book.holder = newOwner; //pedantic? perhaps can simplify rather than overwriting something twice
-	  _books[newOwner][bookID] = book;
+	       // get book of the original Owner, set data for
+	       // new Owner and update their bookList
+	       Book memory book = _books[originalOwner][bookID];
+	       uint256 bookPointer = _booksList[newOwner].push(bookID) - 1;
+	       book.bookPointer = bookPointer;
+	       book.holder = newOwner; //pedantic? perhaps can simplify rather than overwriting something twice
+	       _books[newOwner][bookID] = book;
 
-	  // remove the book from the original Owner
-	  // false to not burn book, simply remove from _books mapping and bookList
-	  //removeBook( originalOwner, bookID, false);
+	       // remove the book from the original Owner
+	       // false to not burn book, simply remove from _books mapping and bookList
+	       //removeBook( originalOwner, bookID, false);
 
-	  // reset trade mapping
-	  _trade[originalOwner][newOwner][bookID] = false;
+	       // reset trade mapping
+	       _trade[originalOwner][newOwner][bookID] = false;
       }
 
       // The book has successfully been returned to the rightful owner.
@@ -496,16 +491,12 @@ contract BookLedger is ERC721 {
      * refund the escrow amount to the requester
      */
     function refundEscrow( address originalOwner, address tempOwner, uint256 bookID ) private exists(bookID) {
-
-	     // require
-
 	      // decrease the contracts escrow for the tempOwner
 	      uint256 refund_escrow = _bookEscrow[originalOwner][tempOwner][bookID];
 	      _contractEscrow[tempOwner] = _contractEscrow[tempOwner].sub(_bookEscrow[originalOwner][tempOwner][bookID]);
-
 	      // send the money back to the tempOwner
 	      // transfer()?
-
+        tempOwner.transfer(refund_escrow);
     }
 
     /**
@@ -594,7 +585,7 @@ contract BookLedger is ERC721 {
 
      // if it not lost, then the user intended to remove it from their _books mapping
      if ( _lostBooksList[owner][bookID] != true && burn == false ) {
-	 delete _books[owner][bookID];
+	      delete _books[owner][bookID];
      }
 
      // Question: If the book is found, how will it be added back into circulation?
