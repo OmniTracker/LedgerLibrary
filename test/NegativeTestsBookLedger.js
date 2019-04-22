@@ -9,17 +9,18 @@ const checkEvent = utils.checkEvent
 const zero40 = utils.zero40
 const pause = utils.pause
 const expectRevert = utils.expectRevert
+const minEscrow = utils.minEscrow
+const maxEscrow = utils.maxEscrow
+//const maxBookCount = utils.maxBookCount
+//const rentalInterval = utils.rentalInterval
 
-const minEscrow = 0
-const maxEscrow = 1000
-const maxBookCount = 3
-const rentalInterval = 200
+
 
 contract('NegativeTestsBookLedger', async function (accounts) {
 
   beforeEach('Make fresh contract', async function () {
     bookLedger = await BookLedger.new( // We let accounts[5] represent the minter.
-      accounts[5], minEscrow)
+	accounts[5], minEscrow)
   })
   it('should have correct initial state', async function () {
     await checkState([bookLedger], [[]], accounts)

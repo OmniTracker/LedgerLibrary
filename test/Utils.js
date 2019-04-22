@@ -13,6 +13,13 @@ const mapValuesDeep = (v, callback) => (
 const zero40 = "0x0000000000000000000000000000000000000000"
 const zero64 = "0x0000000000000000000000000000000000000000000000000000000000000000"
 
+const minEscrow = 0
+const maxEscrow = 1000
+const maxBookCount = 3
+const rentalInterval = 200
+
+
+
 let accountBalances = {}
 
 // Checks whether an event was properly emmitted.
@@ -186,5 +193,7 @@ module.exports = {
   expectRevert: expectRevert,
   zero40: zero40,
   zero64: zero64,
+    minEscrow: minEscrow,
+    maxEscrow: maxEscrow,
   pause: pause,
 }

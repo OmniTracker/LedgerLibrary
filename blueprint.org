@@ -24,3 +24,24 @@ preferable to have a list of users that can then map address to users list of bo
  burn book
  remove books[]
  remove booksList[]
+** Steps for loaning / trading
+
+*** loan
+
+ - make newBook
+ - requestBook
+ - commitBook
+ - commitEscrow
+ - checkoutBook
+ - acceptBook
+ - returnBook
+ - archiveBook
+
+*** trade
+
+ - make newBook
+ - requestBook
+ - commitBook
+ - commitEscrow
+ - sendBook
+ - acceptBook ( + trade token)
