@@ -480,17 +480,13 @@ contract BookLedger is ERC721 {
 	       // reset trade mapping
 	       _trade[originalOwner][newOwner][bookID] = false;
       }
-
-      // The book has successfully been returned to the rightful owner.
-      // Refund the escrow to the temporary owner (here the sender)
-      refundEscrow( originalOwner, newOwner, bookID );
     }
 
     /** Return Escrow
      * After the book has been returned to the library or the trade is complete,
      * refund the escrow amount to the requester
      */
-    function refundEscrow( address originalOwner, address tempOwner, uint256 bookID ) private exists(bookID) {
+    function refundEscrow( address originalOwner, address tempOwner, uint256 bookID ) public payable exists(bookID) {
 	      // decrease the contracts escrow for the tempOwner
 	      uint256 refund_escrow = _bookEscrow[originalOwner][tempOwner][bookID];
 	      _contractEscrow[tempOwner] = _contractEscrow[tempOwner].sub(_bookEscrow[originalOwner][tempOwner][bookID]);
