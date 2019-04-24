@@ -12,8 +12,6 @@ contract BookLedger is ERC721 {
   string public constant contractName = 'BookLedger';
   using SafeMath for uint256;
 
-  event bookRequested();
-  event people(address msgSender, address owner);
   event bookAdded(string publisher, string author, string name );
   event bookRemoved(string publisher, string author, string name );
   event escrowCommitted(address newOwner, uint256 escrowAmount );
@@ -188,7 +186,6 @@ contract BookLedger is ERC721 {
       require(doesUserHaveBook ( owner, bookID ));
       // Check if removing the book will bring the count of total books to zero
       require(numberOfAUserHolds ( owner ) > 0);
-      delete _doesUserHaveBook[owner][bookID];
       _userBookCount[owner] = _userBookCount[owner].sub(1);
     }
    /**  Get the availability of book from library. */
@@ -227,8 +224,6 @@ contract BookLedger is ERC721 {
    */
     function requestBook ( address owner, uint256 bookID, bool trade ) exists(bookID) public
    {
-     emit people( msg.sender, owner);
-
      // You should not be able to request a book that you are the owner of
      // Question: is this necessary?
      require(_books[owner][bookID].exist);
@@ -487,17 +482,28 @@ contract BookLedger is ERC721 {
       }
     }
 
-    /** Return Escrow
+    /** Refund Escrow
      * After the book has been returned to the library or the trade is complete,
      * refund the escrow amount to the requester
      */
-    function refundEscrow( address originalOwner, address tempOwner, uint256 bookID ) public payable exists(bookID) {
-	      // decrease the contracts escrow for the tempOwner
-	      uint256 refund_escrow = _bookEscrow[originalOwner][tempOwner][bookID];
-	      _contractEscrow[tempOwner] = _contractEscrow[tempOwner].sub(_bookEscrow[originalOwner][tempOwner][bookID]);
-	      // send the money back to the tempOwner
-	      // transfer()?
-        tempOwner.send(refund_escrow);
+    function refundEscrow( address sender, address receiver, uint256 bookID ) public payable exists(bookID) {
+        // Require the sender of the message
+        require(sender == msg.sender);
+        // Require the value passed in is more than zero.
+        require(0 <= msg.value);
+        // Require the amount being transfer to the reciver is equal to the original
+        // book escrow amount.
+        require(_bookEscrow[sender][receiver][bookID] == msg.value);
+        // Require the amount being transfer to the receiving account does not
+        // exceed the total amount already in escrow for the receiver.
+        require(_contractEscrow[receiver] >= msg.value);
+	      // decrease the contracts escrow for the receiver
+	      _contractEscrow[receiver] = _contractEscrow[receiver].sub(_bookEscrow[sender][receiver][bookID]);
+        // send the money back to the receiver
+        receiver.transfer(msg.value);
+        // Remove the book ecrow mapping so the user isn't allowed to receive
+        // again.
+        delete (_bookEscrow[sender][receiver][bookID]);
     }
 
     /**
@@ -529,17 +535,13 @@ contract BookLedger is ERC721 {
     {
        // Require the book exist in the first place before it is reported lost
        require( _books[owner][bookID].exist );
-
       // Cannot lose the same book twice, so will not allow the book to
       // be re added to the lost book list.
        require( !_lostBooksList[owner][bookID] );
-
        // Set the book as lost
        _lostBooksList[owner][bookID] = true;
-
        // Remove the book from circulation.
        removeBook( owner, bookID, false );
-
        // Broadcast that the book has been lost and added to the lost book queue
        emit bookIsLost(true, bookID);
     }
@@ -586,7 +588,7 @@ contract BookLedger is ERC721 {
 
      // if it not lost, then the user intended to remove it from their _books mapping
      if ( _lostBooksList[owner][bookID] != true && burn == false ) {
-	      delete _books[owner][bookID];
+	      delete ( _books[owner][bookID] );
      }
 
      // Question: If the book is found, how will it be added back into circulation?

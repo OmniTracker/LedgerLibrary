@@ -140,7 +140,7 @@ contract('PositiveTestsBookLedger', async function (accounts) {
         let bookLedgerStateChanges = [
     	{'var': 'ownerOf.b3', 'expect': accounts[5]},
       {'var': 'ownerOf.b4', 'expect': accounts[5]},
-    	{'var': 'bookEscrow.b0b1', 'expect': 2}
+      {'var': 'bookEscrow.b0b1', 'expect': 2}
         ]
 
         // Check state after done
@@ -197,13 +197,11 @@ contract('PositiveTestsBookLedger', async function (accounts) {
     console.log("Alice has successfully returned the book and the library has put it back on the self")
 
     // Refund Escrow amount back to the original owner
-    await bookLedger.refundEscrow( accounts[5], accounts[3], 420013, {from: accounts[5]})
+    let refundAmount = await bookLedger.bookEscrow( accounts[5], accounts[3], 420013 );
+    await bookLedger.refundEscrow( accounts[5], accounts[3], 420013, {from: accounts[5], value: refundAmount })
 
     // Expected state Changes
-    let bookLedgerStateChanges = [
-	{'var': 'ownerOf.b3', 'expect': accounts[5]},
-	{'var': 'bookEscrow.b0b1', 'expect': 2}
-    ]
+    let bookLedgerStateChanges = [{'var': 'ownerOf.b3', 'expect': accounts[5]}]
     // Check state after done
     await checkState([bookLedger], [bookLedgerStateChanges], accounts)
   })
@@ -235,13 +233,11 @@ contract('PositiveTestsBookLedger', async function (accounts) {
     console.log("Alice has successfully put the book she received from the library on on her bookshelf")
 
     // Refund Escrow amount back to the original owner
-    // await bookLedger.refundEscrow( accounts[5], accounts[3], 420013, {from: accounts[5]})
+    let refundAmount = await bookLedger.bookEscrow( accounts[5], accounts[3], 420013 );
+    await bookLedger.refundEscrow( accounts[5], accounts[3], 420013, {from: accounts[5], value: refundAmount })
 
     // Expected state Changes
-    let bookLedgerStateChanges = [
-	{'var': 'ownerOf.b3', 'expect': accounts[3]},
-	{'var': 'bookEscrow.b0b1', 'expect': 2}
-    ]
+    let bookLedgerStateChanges = [{'var': 'ownerOf.b3', 'expect': accounts[3]}]
     // Check state after done
     await checkState([bookLedger], [bookLedgerStateChanges], accounts)
   })
