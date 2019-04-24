@@ -129,6 +129,9 @@ contract('NegativeTestsBookLedger', async function (accounts) {
     await bookLedger.archiveBook( accounts[5], accounts[3], 420013, "Great", {from: accounts[5]} )
     console.log("Alice has successfully returned the book and the library has put it back on the self")
 
+    // Refund Escrow amount back to the original owner
+    // await bookLedger.refundEscrow( accounts[5], accounts[3], 420013, {from: accounts[5]})
+
     // Expected state Changes
     let bookLedgerStateChanges = [
 	{'var': 'ownerOf.b3', 'expect': accounts[5]},
@@ -182,6 +185,9 @@ contract('NegativeTestsBookLedger', async function (accounts) {
     // transaction isbookLedger.sendBook complete
     await bookLedger.archiveBook( accounts[5], accounts[3], 420013, "Great", {from: accounts[5]} )
     console.log("Alice has successfully returned the book and the library has put it back on the self")
+
+    // Refund Escrow amount back to the original owner
+    // await bookLedger.refundEscrow( accounts[5], accounts[3], 420013, {from: accounts[5]})
 
     // Bob is now able to request book since it is back into the library
     await bookLedger.requestBook( accounts[5], 420013, false,{from: accounts[4]} )
@@ -243,6 +249,9 @@ contract('NegativeTestsBookLedger', async function (accounts) {
     await bookLedger.archiveBook( accounts[5], accounts[3], 420013, "Great", {from: accounts[5]} )
     console.log("Alice has successfully returned the book and the library has put it back on the self")
 
+    // Refund Escrow amount back to the original owner
+    // await bookLedger.refundEscrow( accounts[5], accounts[3], 420013, {from: accounts[5]})
+
     // Expected state Changes
     let bookLedgerStateChanges = [
   {'var': 'ownerOf.b3', 'expect': accounts[5]},
@@ -301,6 +310,9 @@ contract('NegativeTestsBookLedger', async function (accounts) {
     // transaction is complete
     await bookLedger.archiveBook( accounts[5], accounts[3], 420013, "Great", {from: accounts[5]} )
     console.log("Alice has successfully returned the book and the library has put it back on the self")
+
+    // Refund Escrow amount back to the original owner
+    // await bookLedger.refundEscrow( accounts[5], accounts[3], 420013, {from: accounts[5]})
 
     // Expected state Changes
     let bookLedgerStateChanges = [
@@ -362,6 +374,10 @@ contract('NegativeTestsBookLedger', async function (accounts) {
     console.log("Alice tries to archive book herself, but this should fail since she is not the library")
     await bookLedger.archiveBook( accounts[5], accounts[3], 420013, "Great", {from: accounts[5]} )
     console.log("Alice has successfully returned the book and the library has put it back on the self")
+
+    // Refund Escrow amount back to the original owner
+    // await bookLedger.refundEscrow( accounts[5], accounts[3], 420013, {from: accounts[5]})
+
     // Expected state Changes
     let bookLedgerStateChanges = [
   {'var': 'ownerOf.b3', 'expect': accounts[5]},
@@ -417,6 +433,9 @@ contract('NegativeTestsBookLedger', async function (accounts) {
     // transaction is complete
     await bookLedger.archiveBook( accounts[5], accounts[3], 420013, "Great", {from: accounts[5]} )
     console.log("Alice has successfully returned the book and the library has put it back on the self")
+
+    // Refund Escrow amount back to the original owner
+    // await bookLedger.refundEscrow( accounts[5], accounts[3], 420013, {from: accounts[5]})
 
     // Expected state Changes
     let bookLedgerStateChanges = [
@@ -557,6 +576,9 @@ contract('NegativeTestsBookLedger', async function (accounts) {
 
         // await expectRevert(bookLedger.archiveBook( accounts[5], accounts[3], 420013, "Great", {from: accounts[5]} ))
         console.log("Alice has already been successfully returned but there is an issue and the book tried to archive twice")
+
+        // Refund Escrow amount back to the original owner
+        // await bookLedger.refundEscrow( accounts[5], accounts[3], 420013, {from: accounts[5]})
 
         // Expected state Changes
         let bookLedgerStateChanges = [

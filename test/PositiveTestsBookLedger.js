@@ -19,7 +19,7 @@ const maxEscrow = utils.maxEscrow
 contract('PositiveTestsBookLedger', async function (accounts) {
 
   beforeEach('Make fresh contract', async function () {
-    bookLedger = await BookLedger.new( // We let accounts[5] represent the minter.
+    bookLedger = await BookLedger.new( // We let accounts[5] represent the mintr.
 	accounts[5], minEscrow)
   })
 
@@ -196,6 +196,9 @@ contract('PositiveTestsBookLedger', async function (accounts) {
     await bookLedger.archiveBook( accounts[5], accounts[3], 420013, "Great", {from: accounts[5]} )
     console.log("Alice has successfully returned the book and the library has put it back on the self")
 
+    // Refund Escrow amount back to the original owner
+    await bookLedger.refundEscrow( accounts[5], accounts[3], 420013, {from: accounts[5]})
+
     // Expected state Changes
     let bookLedgerStateChanges = [
 	{'var': 'ownerOf.b3', 'expect': accounts[5]},
@@ -230,8 +233,10 @@ contract('PositiveTestsBookLedger', async function (accounts) {
     // Alice puts the book on her bookshelf
     await bookLedger.archiveBook( accounts[5], accounts[3], 420013, "Great", {from: accounts[3]} )
     console.log("Alice has successfully put the book she received from the library on on her bookshelf")
-    /*
-    */
+
+    // Refund Escrow amount back to the original owner
+    // await bookLedger.refundEscrow( accounts[5], accounts[3], 420013, {from: accounts[5]})
+
     // Expected state Changes
     let bookLedgerStateChanges = [
 	{'var': 'ownerOf.b3', 'expect': accounts[3]},

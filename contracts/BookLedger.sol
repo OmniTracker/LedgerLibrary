@@ -301,17 +301,21 @@ contract BookLedger is ERC721 {
      // require the bookEscrow set is equal to the amount passed into this function.
      // Question: Will we always want these values to be equal? Would greater
      // than or equal be sufficient?
-     // require(_bookEscrow[sender][receiver][bookID] == escrow);
+     require(_bookEscrow[sender][receiver][bookID] == escrow);
 
      // require the book has already been commited by the library, but not currently
      // in transmission
      require(isBookCommitted( sender, receiver, bookID));
      require(!transmissionStatus( sender, receiver, bookID));
 
+     // Require the receiver of the book is calling the function
+     require(receiver == msg.sender);
+
      // Should force the book to be in the possesion of the library in order to update the
      // escrow
 
      // Give the contract the escrow as security deposit
+     sender.transfer(escrow);
      _contractEscrow[receiver] = _contractEscrow[receiver].add(escrow);
 
      // Change status of the receiver as having committed their security deposit
@@ -493,7 +497,7 @@ contract BookLedger is ERC721 {
 	      _contractEscrow[tempOwner] = _contractEscrow[tempOwner].sub(_bookEscrow[originalOwner][tempOwner][bookID]);
 	      // send the money back to the tempOwner
 	      // transfer()?
-        tempOwner.transfer(refund_escrow);
+        tempOwner.send(refund_escrow);
     }
 
     /**
