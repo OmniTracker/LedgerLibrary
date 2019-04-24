@@ -291,7 +291,8 @@ contract BookLedger is ERC721 {
       sender: entity that currently owns book, eg. librarian
       receiver: entity requesting book from sender, eg bibliophile
     */
-   function commitEscrow ( address sender, address receiver, uint256 bookID, uint256 escrow ) public {
+   function commitEscrow ( address sender, address receiver, uint256 bookID ) public payable {
+     uint256 escrow = msg.value;
      // require the set book escrow for the book is greater than the minimum escrow
      // defined when the contract was created.
      // must require some sort of deposit is set for the book.
@@ -300,7 +301,7 @@ contract BookLedger is ERC721 {
      // require the bookEscrow set is equal to the amount passed into this function.
      // Question: Will we always want these values to be equal? Would greater
      // than or equal be sufficient?
-     require(_bookEscrow[sender][receiver][bookID] == escrow);
+     // require(_bookEscrow[sender][receiver][bookID] == escrow);
 
      // require the book has already been commited by the library, but not currently
      // in transmission

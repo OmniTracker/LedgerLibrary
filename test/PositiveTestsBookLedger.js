@@ -87,27 +87,27 @@ contract('PositiveTestsBookLedger', async function (accounts) {
         await bookLedger.requestBook( accounts[5], 420014, false, {from: accounts[4]} )
 
         // confirm escrow amount set by librarian for first book
-        await bookLedger.commitBook( accounts[5], accounts[3], 420013, 300, {from: accounts[5]} )
+        await bookLedger.commitBook( accounts[5], accounts[3], 420013, 2, {from: accounts[5]} )
         let bookEscrowAmount1 = (await bookLedger.bookEscrow.call( accounts[5], accounts[3], 420013 )).toNumber()
-        assert( await bookLedger.bookEscrow( accounts[5], accounts[3], 420013 ), 300 )
+        assert( await bookLedger.bookEscrow( accounts[5], accounts[3], 420013 ), 2 )
         console.log("bookEscrow for first book checkoutBook", bookEscrowAmount1)
 
         // confirm escrow amount set by liberian for second book
-        await bookLedger.commitBook( accounts[5], accounts[4], 420014, 300, {from: accounts[5]} )
+        await bookLedger.commitBook( accounts[5], accounts[4], 420014, 2, {from: accounts[5]} )
         let bookEscrowAmount2 = (await bookLedger.bookEscrow.call( accounts[5], accounts[4], 420014 )).toNumber()
-        assert( await bookLedger.bookEscrow( accounts[5], accounts[3], 420014 ), 300 )
+        assert( await bookLedger.bookEscrow( accounts[5], accounts[3], 420014 ), 2 )
         console.log("bookEscrow for second book checkoutBook", bookEscrowAmount2)
 
         // confirm Alice (account[3]) meets escrow amount
-        await bookLedger.commitEscrow( accounts[5], accounts[3], 420013, 300, {from: accounts[3]} )
+        await bookLedger.commitEscrow( accounts[5], accounts[3], 420013, {from: accounts[3], value: 2} )
         let accountEscrowAmount1 = (await bookLedger.accountEscrow.call( accounts[3] )).toNumber()
-        assert( await bookLedger.accountEscrow( accounts[3] ), 300 )
+        assert( await bookLedger.accountEscrow( accounts[3] ), 2 )
         console.log("accountEscrow for first book checkoutBook", accountEscrowAmount1)
 
         // confirm Bob (account[4]) meets escrow amount
-        await bookLedger.commitEscrow( accounts[5], accounts[4], 420014, 300, {from: accounts[4]} )
+        await bookLedger.commitEscrow( accounts[5], accounts[4], 420014, {from: accounts[4], value: 2} )
         let accountEscrowAmount2 = (await bookLedger.accountEscrow.call( accounts[4] )).toNumber()
-        assert( await bookLedger.accountEscrow( accounts[4] ), 300 )
+        assert( await bookLedger.accountEscrow( accounts[4] ), 2 )
         console.log("accountEscrow for second book checkoutBook", accountEscrowAmount2)
 
         // confirm librarian (account[5]) sent book by putting in transmission for Alice(account[3])
@@ -140,7 +140,7 @@ contract('PositiveTestsBookLedger', async function (accounts) {
         let bookLedgerStateChanges = [
     	{'var': 'ownerOf.b3', 'expect': accounts[5]},
       {'var': 'ownerOf.b4', 'expect': accounts[5]},
-    	{'var': 'bookEscrow.b0b1', 'expect': 300}
+    	{'var': 'bookEscrow.b0b1', 'expect': 2}
         ]
 
         // Check state after done
@@ -160,15 +160,15 @@ contract('PositiveTestsBookLedger', async function (accounts) {
     await bookLedger.requestBook( accounts[5], 420013, false, {from: accounts[3]} )
 
     // confirm escrow amount set by librarian
-    await bookLedger.commitBook( accounts[5], accounts[3], 420013, 300, {from: accounts[5]} )
+    await bookLedger.commitBook( accounts[5], accounts[3], 420013, 2, {from: accounts[5]} )
     let bookEscrowAmount = (await bookLedger.bookEscrow.call( accounts[5], accounts[3], 420013 )).toNumber()
-    assert( await bookLedger.bookEscrow( accounts[5], accounts[3], 420013 ), 300 )
+    assert( await bookLedger.bookEscrow( accounts[5], accounts[3], 420013 ), 2 )
     console.log("bookEscrow for checkoutBook", bookEscrowAmount)
 
     // confirm Alice meets escrow amount
-    await bookLedger.commitEscrow( accounts[5], accounts[3], 420013, 300, {from: accounts[3]} )
+    await bookLedger.commitEscrow( accounts[5], accounts[3], 420013, {from: accounts[3], value: 2} )
     let accountEscrowAmount = (await bookLedger.accountEscrow.call( accounts[3] )).toNumber()
-    assert( await bookLedger.accountEscrow( accounts[3] ), 300 )
+    assert( await bookLedger.accountEscrow( accounts[3] ), 2 )
     console.log("accountEscrow for checkoutBook", accountEscrowAmount)
 
     // confirm Librarian sent book by putting in transmission
@@ -199,7 +199,7 @@ contract('PositiveTestsBookLedger', async function (accounts) {
     // Expected state Changes
     let bookLedgerStateChanges = [
 	{'var': 'ownerOf.b3', 'expect': accounts[5]},
-	{'var': 'bookEscrow.b0b1', 'expect': 300}
+	{'var': 'bookEscrow.b0b1', 'expect': 2}
     ]
     // Check state after done
     await checkState([bookLedger], [bookLedgerStateChanges], accounts)
@@ -215,10 +215,10 @@ contract('PositiveTestsBookLedger', async function (accounts) {
     await bookLedger.requestBook( accounts[5], 420013, true, {from: accounts[3]} )
 
     // confirm escrow amount set by librarian
-    await bookLedger.commitBook( accounts[5], accounts[3], 420013, 300, {from: accounts[5]} )
+    await bookLedger.commitBook( accounts[5], accounts[3], 420013, 2, {from: accounts[5]} )
 
     // confirm Alice meets escrow amount
-    await bookLedger.commitEscrow( accounts[5], accounts[3], 420013, 300, {from: accounts[3]} )
+    await bookLedger.commitEscrow( accounts[5], accounts[3], 420013, {from: accounts[3], value: 2} )
 
     // confirm Librarian sent book by putting in transmission
     await bookLedger.sendBook( accounts[5], accounts[3], 420013, {from: accounts[5]} )
@@ -235,7 +235,7 @@ contract('PositiveTestsBookLedger', async function (accounts) {
     // Expected state Changes
     let bookLedgerStateChanges = [
 	{'var': 'ownerOf.b3', 'expect': accounts[3]},
-	{'var': 'bookEscrow.b0b1', 'expect': 300}
+	{'var': 'bookEscrow.b0b1', 'expect': 2}
     ]
     // Check state after done
     await checkState([bookLedger], [bookLedgerStateChanges], accounts)
