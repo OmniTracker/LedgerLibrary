@@ -17,6 +17,7 @@ const minEscrow = 0
 const maxEscrow = 1000
 const maxBookCount = 3
 const rentalInterval = 200
+const delta = 0
 
 
 
@@ -63,7 +64,7 @@ async function expectedState(token, stateChanges, accounts, name) {
       state = {
 	  'ownerOf': {'b0': zero40, 'b1': zero40, 'b2': zero40, 'b3': zero40, 'b4': zero40},
 	  'minter': accounts[5],
-	  'bookEscrow': {'b0b1': 0},
+	  'bookEscrow': {'b5b3': 0, 'b5b4': 0},
       }
     break
     case 'CryptoBears':
@@ -117,6 +118,7 @@ async function actualState(token, state, accounts, name) {
 	  await token.ownerOf.call(420014),
 	  await token._minter.call(),
 	  (await token.bookEscrow.call(accounts[5], accounts[3], 420013)).toNumber(),
+	  (await token.bookEscrow.call(accounts[5], accounts[4], 420014)).toNumber(),
     ]
     break
     case 'CryptoBears':
@@ -195,5 +197,6 @@ module.exports = {
   zero64: zero64,
     minEscrow: minEscrow,
     maxEscrow: maxEscrow,
+    delta: delta,
   pause: pause,
 }

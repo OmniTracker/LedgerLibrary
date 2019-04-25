@@ -14,14 +14,10 @@ contract BookLedger is ERC721 {
 
   event bookAdded(string publisher, string author, string name );
   event bookRemoved(string publisher, string author, string name );
-  event bookRequested(address owner, address requester, uint256 bookID);
   event escrowCommitted(address newOwner, uint256 escrowAmount );
   event bookInTransmission(address currentOwner, address tempOwner, uint256 bookID, bool InTransmission );
   event bookReceived(bool transmissionComplete, string bookCondition );
   event bookIsLost(bool bookLost, uint256 bookID);
-  event escrowRefunded(address recipient, uint256 amount);
-  event startTimerForDefense( address plaintiff, address defendant, uint256 startTimer);
-  event deltaTimeNotElapsed(uint256 basically_now, uint256 delta_now);
 
   struct Book {
     uint256 bookID;
@@ -48,6 +44,10 @@ contract BookLedger is ERC721 {
   mapping(address => uint256[]) internal _booksList;
   mapping(address => mapping(uint256 => bool)) internal _lostBooksList;
 
+  // Used to check if a user have a book
+  mapping(address => mapping(uint256 => bool)) _doesUserHaveBook;
+  mapping(address => uint256) _userBookCount;
+
   // mapping for whether book will be loaned or traded
   mapping(address => mapping(address => mapping(uint256 => bool))) internal _trade;
 
@@ -65,17 +65,11 @@ contract BookLedger is ERC721 {
   mapping(address => mapping(address => mapping(uint256 => uint256))) public _bookEscrow;
   mapping(address => uint256) internal _contractEscrow;
 
-  // mapping of whether a complaint was filed and the time the complaint was filed
-  mapping(address => mapping(address => mapping(uint256 => bool))) internal _complaint;
-  mapping(address => mapping(address => mapping(uint256 => uint256))) internal _timeout;
-
-  // approvedUser for each book to withdraw funds
-  mapping(address => mapping(uint256 => bool)) internal _approvedUser;
-
   address public _minter;
   uint256 public _minEscrow; // Set the min escrow number
   uint256 public _maxEscrow; // Limit the max escrow number
-  uint256 public _delta;
+
+  uint256 public _maxBookCount; // Limit the number of books a user can take out
 
   constructor(
     address minter,
@@ -83,8 +77,7 @@ contract BookLedger is ERC721 {
   ) public {
       _minter = minter;
       _minEscrow = minEscrow;
-      _maxEscrow = minEscrow.mul(3);
-      _delta = 3;
+      //_maxEscrow = maxEscrow;
   }
   modifier onlyMinter() {
     require(msg.sender == _minter, "msg.sender is not _minter.");
@@ -100,13 +93,13 @@ contract BookLedger is ERC721 {
      properties of the book for sharing
    */
    function newBook ( address owner,
-		      uint256 bookID,
+		                  uint256 bookID,
                       uint256 genre,
                       string country,
                       string publisher,
                       string author,
                       string name )
-      public returns(uint256)
+      public onlyMinter returns(uint256)
    {
      Book memory book = Book({
        bookID: bookID,
@@ -149,13 +142,52 @@ contract BookLedger is ERC721 {
      - bookEscrow(owner, requester, bookID)
     */
 
+   /** Get origin date of book being placed in library. */
+    function originDateOfBook ( address owner, uint256 bookID )
+      external exists(bookID) view returns(uint256)
+    { return _books[owner][bookID].timeOfOrigin; }
+
     /** Get number of books in Library  */
     function numberOfBookInLibrary ( address owner )
     public view returns(uint256)
     {
+      require(_minter == owner);
       return _booksList[owner].length;
     }
 
+    /** Get number of books a user have  */
+    function numberOfAUserHolds ( address owner )
+    public view returns(uint256)
+    {
+      require(_minter != owner);
+      return _userBookCount[owner];
+    }
+
+    /** Get number of books a user have  */
+    function doesUserHaveBook ( address owner, uint256 bookID )
+    public view returns(bool)
+    {
+      require(_minter != owner);
+      return _doesUserHaveBook[owner][bookID];
+    }
+
+    /* Add book to user */
+    function addBookToUser ( address owner, uint256 bookID )
+    {
+      // Check to see whether the user have the book in their possession
+      require(!doesUserHaveBook ( owner, bookID ));
+      _doesUserHaveBook[owner][bookID] = true;
+      _userBookCount[owner] = _userBookCount[owner].add(1);
+    }
+    /* Remove book from user */
+    function removeBookFromUser (  address owner, uint256 bookID  )
+    {
+      // Check to see whether the user have the book in their possession
+      require(doesUserHaveBook ( owner, bookID ));
+      // Check if removing the book will bring the count of total books to zero
+      require(numberOfAUserHolds ( owner ) > 0);
+      _userBookCount[owner] = _userBookCount[owner].sub(1);
+    }
    /**  Get the availability of book from library. */
     function isBookAvailable( address owner, uint256 bookID )
     public exists(bookID) view returns(bool)
@@ -214,7 +246,8 @@ contract BookLedger is ERC721 {
      if( trade == true) {
 	      _trade[owner][msg.sender][bookID] = true;
      }
-     emit bookRequested( owner, msg.sender, bookID);
+
+
      // Question: Should probably put some code here to confirm that the book
      // has been requested.
    }
@@ -429,10 +462,6 @@ contract BookLedger is ERC721 {
       _books[originalOwner][bookID].availability = true;
       _books[originalOwner][bookID].holder = originalOwner;
 
-      // allow
-      // allow the user to receive their escrow
-      _approvedUser[newOwner][bookID] = true;
-
       // trade _books mapping if a trade
       if ( _trade[originalOwner][newOwner][bookID] == true ) {
 
@@ -453,78 +482,85 @@ contract BookLedger is ERC721 {
       }
     }
 
-    /** refundEscrow. Only allow verified users to receive escrow, note, does not update bookEscrow
+    /** Refund Escrow
+     * After the book has been returned to the library or the trade is complete,
+     * refund the escrow amount to the requester
      */
-    function refundEscrow( address escrowHolder, address escrowPayable, uint256 bookID ) public payable {
-
-	// once the address payable has been approved, can they withdraw the escrow
-	require( _approvedUser[escrowPayable][bookID] == true );
-	
+    function refundEscrow( address sender, address receiver, uint256 bookID ) public payable exists(bookID) {
+        // Require the sender of the message
+        require(sender == msg.sender);
+        // Require the value passed in is more than zero.
+        require(0 <= msg.value);
+        // Require the amount being transfer to the reciver is equal to the original
+        // book escrow amount.
+        require(_bookEscrow[sender][receiver][bookID] == msg.value);
         // Require the amount being transfer to the receiving account does not
         // exceed the total amount already in escrow for the receiver.
-        require(_contractEscrow[escrowHolder] >= msg.value);
-	
-        _contractEscrow[escrowHolder] = _contractEscrow[escrowHolder].sub(msg.value);
-	escrowPayable.transfer(msg.value);
-        emit escrowRefunded(escrowPayable, msg.value);
-	
+        require(_contractEscrow[receiver] >= msg.value);
+	      // decrease the contracts escrow for the receiver
+	      _contractEscrow[receiver] = _contractEscrow[receiver].sub(_bookEscrow[sender][receiver][bookID]);
+        // send the money back to the receiver
+        receiver.transfer(msg.value);
+        // Remove the book ecrow mapping so the user isn't allowed to receive
+        // again.
+        delete (_bookEscrow[sender][receiver][bookID]);
     }
 
-    /** rejectBook. Reject a book either because it was lost in transmission or 
-     *  damamged. Whether the person lies about this doesn't matter as they've
-     *  already placed an escrow to the contract.
-     *  
-     *  Either party may call this function. 
-     */
-    function rejectBook ( address plaintiff, address defendant, uint256 bookID ) public payable exists(bookID) {
+    /**
+      * Trade Book. Trade book will allow one user to trade books with another
+      * user without resubmitting the book to the library. This function should
+      * initiate the transaction.
+      */
+    function tradeBook ( address owner1, uint256 bookID1, address owner2, uint256 bookID2) exists(bookID1) exists(bookID2) public
+    {
+      // Make sure books are not currntly in the process of being transfered to
+      // anyone else before making trade.
+      require(_committed[owner1][owner2][bookID1] == false);
+      require(_bookTransmission[owner1][owner2][bookID1] == false);
+      require(_committed[owner2][owner1][bookID2] == false);
+      require(_bookTransmission[owner2][owner1][bookID2] == false);
 
-	// if the first complaint, start a timer so that if no counter
-	// is provided in time, refund the security deposit to the plaintiff
-
-	// refunded amount should be the same as what's in escrow
-	require( msg.value == _bookEscrow[defendant][plaintiff][bookID] );
-	
-	if( _complaint[plaintiff][defendant][bookID] == false) {
-	    _timeout[plaintiff][defendant][bookID] = now + _delta;
-	    _complaint[plaintiff][defendant][bookID] = true;
-	}
-	emit startTimerForDefense( plaintiff, defendant, _timeout[plaintiff][defendant][bookID]);
-
-	// if the elapsed time has passed, refund to the plaintiff
-	// book can be considered lost, remove from defendants bookList
-	uint256 delta_now = _timeout[plaintiff][defendant][bookID];
-
-	if(now > delta_now || _approvedUser[plaintiff][bookID] == true) {
-	    refundEscrow( plaintiff, plaintiff, bookID );
-	    delete (_bookEscrow[defendant][plaintiff][bookID]);
-	    _lostBooksList[defendant][bookID] = true;
-	} else {
-	    emit deltaTimeNotElapsed(now, delta_now);
-	    // test case, after calling once, allow override to withdraw funds
-	    _approvedUser[plaintiff][bookID] = true;
-	}
+      // Set books as being prompted for transmission
+      _committed[owner1][owner2][bookID1] = true;
+      _committed[owner2][owner1][bookID2] = true;
     }
 
-  /** verifiedDefense.
-   *  If the plaintiff can provide evidence the book was sent, they can    
-   *  override the timer to claim the escrow by calling rejectBook
-   */
-    function verifiedDefense ( address plaintiff, address defendant, uint256 bookID ) public payable exists(bookID) {
-	// the defendant must have a complaint filed against them
-	// don't care about timer, as if the plaintiff has not claimed after
-	// delta but the defense them provides evidence, they should be able to claim
-	require( _complaint[plaintiff][defendant][bookID] == true );
-
-	// allow the defendant to now withdraw funds
-	_approvedUser[defendant][bookID] = true;
-
-	// receive the escrow and set the book as lost
-	refundEscrow( plaintiff, defendant, bookID);
-        delete (_bookEscrow[defendant][plaintiff][bookID]);
-	_lostBooksList[defendant][bookID] = true;
+  /**
+    * If a book is lost in transmission or by a user, this function should be called
+    * to clear out any transaction information for the given book. Once this
+    * information is cleared, the book is then burned and removed from the
+    * library blockchain.
+    */
+    function lostBook ( address owner, uint256 bookID ) exists(bookID) public
+    {
+       // Require the book exist in the first place before it is reported lost
+       require( _books[owner][bookID].exist );
+      // Cannot lose the same book twice, so will not allow the book to
+      // be re added to the lost book list.
+       require( !_lostBooksList[owner][bookID] );
+       // Set the book as lost
+       _lostBooksList[owner][bookID] = true;
+       // Remove the book from circulation.
+       removeBook( owner, bookID, false );
+       // Broadcast that the book has been lost and added to the lost book queue
+       emit bookIsLost(true, bookID);
     }
 
-    
+    /*
+    function updateBooksList( address originalOwner, address newOwner, uint256 bookID, bool permanence )
+    public exists(bookID) returns(bool)
+    {
+	// get book of the original Owner
+	memory book = _books[originalOwner][bookID];
+	uint256 bookPointer = _booksList[newOwner].push(bookID) - 1;
+	book.bookPointer = bookPointer;
+	_books[newOwner][bookID] = book;
+
+	// permanence means to remove the book from
+	removeBook(originalOwner, bookID, permanence, false);
+	}*/
+
+
   /**
    * Remove book from the library
    * @param bookID The unique ID of the book in the library.

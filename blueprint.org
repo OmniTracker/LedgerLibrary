@@ -45,3 +45,18 @@ preferable to have a list of users that can then map address to users list of bo
  - commitEscrow
  - sendBook
  - acceptBook ( + trade token)
+** reject book
+
+ - Lorelai -> Alice. Alice reject
+   - Lorelai does not counter: Alice receives her deposit
+   - Lorelai does counter:     If Third party confirms Lorelai sent, she receives the deposit
+                               Otherwise Lorelai is lying and Alice receives her deposit
+   - Alice has no incentive to lie as she can only lose her security deposit
+   - Lorelai has no incentive to lie as she can only receive the security deposit if she can prove
+     she actually sent the book
+
+ - Alice -> Lorelai. Lorelai reject
+   - Alice does not counter: Lorelai receives the deposit
+   - Alice does counter:     If Third party confirms Alice sent, she receives the deposit
+                             Otherwise Alice is lying and Lorelai receives the deposit
+   - Same incentive states as before
