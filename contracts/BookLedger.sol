@@ -459,72 +459,74 @@ contract BookLedger is ERC721 {
 
 	// once the address payable has been approved, can they withdraw the escrow
 	require( _approvedUser[escrowPayable][bookID] == true );
-	
+
         // Require the amount being transfer to the receiving account does not
         // exceed the total amount already in escrow for the receiver.
         require(_contractEscrow[escrowHolder] >= msg.value);
-	
+
         _contractEscrow[escrowHolder] = _contractEscrow[escrowHolder].sub(msg.value);
 	escrowPayable.transfer(msg.value);
         emit escrowRefunded(escrowPayable, msg.value);
-	
+
     }
 
-    /** rejectBook. Reject a book either because it was lost in transmission or 
+    /** rejectBook. Reject a book either because it was lost in transmission or
      *  damamged. Whether the person lies about this doesn't matter as they've
      *  already placed an escrow to the contract.
-     *  
-     *  Either party may call this function. 
+     *
+     *  Either party may call this function.
      */
     function rejectBook ( address plaintiff, address defendant, uint256 bookID ) public payable exists(bookID) {
 
-	// if the first complaint, start a timer so that if no counter
-	// is provided in time, refund the security deposit to the plaintiff
+	     // if the first complaint, start a timer so that if no counter
+	     // is provided in time, refund the security deposit to the plaintiff
 
-	// refunded amount should be the same as what's in escrow
-	require( msg.value == _bookEscrow[defendant][plaintiff][bookID] );
-	
-	if( _complaint[plaintiff][defendant][bookID] == false) {
-	    _timeout[plaintiff][defendant][bookID] = now + _delta;
-	    _complaint[plaintiff][defendant][bookID] = true;
-	}
-	emit startTimerForDefense( plaintiff, defendant, _timeout[plaintiff][defendant][bookID]);
+	     // refunded amount should be the same as what's in escrow
+	     require( msg.value == _bookEscrow[defendant][plaintiff][bookID] );
 
-	// if the elapsed time has passed, refund to the plaintiff
-	// book can be considered lost, remove from defendants bookList
-	uint256 delta_now = _timeout[plaintiff][defendant][bookID];
+	     if( _complaint[plaintiff][defendant][bookID] == false) {
+	        _timeout[plaintiff][defendant][bookID] = now + _delta;
+	        _complaint[plaintiff][defendant][bookID] = true;
+	      }
 
-	if(now > delta_now || _approvedUser[plaintiff][bookID] == true) {
-	    refundEscrow( plaintiff, plaintiff, bookID );
-	    delete (_bookEscrow[defendant][plaintiff][bookID]);
-	    _lostBooksList[defendant][bookID] = true;
-	} else {
-	    emit deltaTimeNotElapsed(now, delta_now);
-	    // test case, after calling once, allow override to withdraw funds
-	    _approvedUser[plaintiff][bookID] = true;
-	}
+        emit startTimerForDefense( plaintiff, defendant, _timeout[plaintiff][defendant][bookID]);
+
+	      // if the elapsed time has passed, refund to the plaintiff
+	      // book can be considered lost, remove from defendants bookList
+	      uint256 delta_now = _timeout[plaintiff][defendant][bookID];
+
+	      if(now > delta_now || _approvedUser[plaintiff][bookID] == true) {
+	         refundEscrow( plaintiff, plaintiff, bookID );
+	         delete (_bookEscrow[defendant][plaintiff][bookID]);
+	         _lostBooksList[defendant][bookID] = true;
+	       } else {
+	       emit deltaTimeNotElapsed(now, delta_now);
+	       // test case, after calling once, allow override to withdraw funds
+	       _approvedUser[plaintiff][bookID] = true;
+	      }
     }
 
   /** verifiedDefense.
-   *  If the plaintiff can provide evidence the book was sent, they can    
+   *  If the plaintiff can provide evidence the book was sent, they can
    *  override the timer to claim the escrow by calling rejectBook
    */
     function verifiedDefense ( address plaintiff, address defendant, uint256 bookID ) public payable exists(bookID) {
-	// the defendant must have a complaint filed against them
-	// don't care about timer, as if the plaintiff has not claimed after
-	// delta but the defense them provides evidence, they should be able to claim
-	require( _complaint[plaintiff][defendant][bookID] == true );
+	     // the defendant must have a complaint filed against them
+	     // don't care about timer, as if the plaintiff has not claimed after
+	     // delta but the defense them provides evidence, they should be able to claim
+	     require( _complaint[plaintiff][defendant][bookID] == true );
 
-	// allow the defendant to now withdraw funds
-	_approvedUser[defendant][bookID] = true;
+	     // allow the defendant to now withdraw funds
+	     _approvedUser[defendant][bookID] = true;
 
-	// receive the escrow and set the book as lost
-	refundEscrow( plaintiff, defendant, bookID);
-        delete (_bookEscrow[defendant][plaintiff][bookID]);
-	_lostBooksList[defendant][bookID] = true;
+	     // receive the escrow and set the book as lost
+	     refundEscrow( plaintiff, defendant, bookID);
+
+       delete (_bookEscrow[defendant][plaintiff][bookID]);
+	     _lostBooksList[defendant][bookID] = true;
     }
 
-    
+
   /**
    * Remove book from the library
    * @param bookID The unique ID of the book in the library.
