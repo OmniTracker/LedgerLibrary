@@ -27,7 +27,7 @@ contract('DisputeBook', async function (accounts) {
     // accounts[5] = lorelai
     // accounts[3] = Alice
     // Add book for librarian
-    await bookLedger.newBook(accounts[5], 420013, 4, 'United States', 'Doubleday', 'Dan Simmons', 'Hyperion',{from: accounts[5]} )
+    await bookLedger.newBook(accounts[5], 420013, 4, 'United States', 'Doubleday', 'Dan Simmons', 'Hyperion', 'Great', {from: accounts[5]} )
 
     // Alice request book from librarian
     await bookLedger.requestBook( accounts[5], 420013, false, {from: accounts[3]} )
@@ -62,7 +62,7 @@ contract('DisputeBook', async function (accounts) {
     // accounts[5] = lorelai
     // accounts[3] = Alice
     // Add book for librarian
-    await bookLedger.newBook(accounts[5], 420013, 4, 'United States', 'Doubleday', 'Dan Simmons', 'Hyperion',{from: accounts[5]} )
+    await bookLedger.newBook(accounts[5], 420013, 4, 'United States', 'Doubleday', 'Dan Simmons', 'Hyperion', 'Great', {from: accounts[5]} )
 
     // Alice request book from librarian
     await bookLedger.requestBook( accounts[5], 420013, false, {from: accounts[3]} )

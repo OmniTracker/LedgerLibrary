@@ -2,6 +2,11 @@
  list of Users permits iterating over the list to see all users
 preferable to have a list of users that can then map address to users list of books
 
+Startup
+
+export PATH=$(npm bin):$PATH
+ganache-cli --allowUnlimitedContractSize
+
 ** mapping updates
 
  loan book 
@@ -24,6 +29,10 @@ preferable to have a list of users that can then map address to users list of bo
  burn book
  remove books[]
  remove booksList[]
+** Questions
+
+ - difference between _books.exist and exists(bookID)
+
 ** Steps for loaning / trading
 
 *** loan
