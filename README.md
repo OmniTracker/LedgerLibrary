@@ -1,4 +1,4 @@
-# LedgerLibrary
+# BookLibrary
 Library Books and Documents on Ethereum Blockchain
 
 You will also need to run npm install followed by export PATH=$(npm bin):$PATH
