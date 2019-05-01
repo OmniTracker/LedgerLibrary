@@ -8,8 +8,11 @@ ganache.  To do this, open a new terminal tab and run the command ‘ganache-cli
 see ‘Listening on 127.0.0.1:8545’.  This tells you the blockchain is ready to go.  Ganache sets up a
 blockchain exactly like Ethereum’s except your computer is the only node in the network.  It also
 preloads a list of 10 addresses with balances of 100 eth each and exposes their private keys so that
-truffle can use them to send transaction
+truffle can use them to send transaction. 
 
+
+Use the following command while testing:
+ ganache-cli --allowUnlimitedContractSize
 
 ## Trading Books
 
