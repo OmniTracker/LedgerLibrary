@@ -93,7 +93,7 @@ contract BookLedger is ERC721 {
     string name;
     bool exist;
     address holder;
-    bool reading;
+    bool requested;
   }
 
   /**
@@ -120,7 +120,7 @@ contract BookLedger is ERC721 {
        name: name,
        exist: true,
        holder: owner,
-       reading: false
+       requested: false
      });
       // Require the book id does not exist in the _books mapping
       require(!_books[owner][bookID].exist);
@@ -214,6 +214,7 @@ contract BookLedger is ERC721 {
 
      // update mapping for book being requested
      _request[owner][msg.sender][bookID] = true;
+     _books[owner][bookID].requested = true;
      
      emit bookRequested( owner, msg.sender, bookID);
    }
@@ -350,17 +351,19 @@ contract BookLedger is ERC721 {
       // sender and receiver could be either the owner or requester
       require(isBookRequested(sender, receiver, bookID) || isBookRequested(receiver, sender, bookID));
 
+      // get the address of the owner of the book
+      address owner = ownerOf(bookID);
+      
       // book should still be committed between sender and receiver
-      require(isBookCommitted(sender, receiver, bookID));
-      require(isBookCommitted(receiver, sender, bookID));
+      if ( receiver != owner ) {
+	  require(isBookCommitted(sender, receiver, bookID));
+	  require(isBookCommitted(receiver, sender, bookID));
+      }
 
       // Check to make sure the book is in the process of being transferred
       // between the two users.
       require(transmissionStatus(sender,receiver,bookID));
 
-      // get the address of the owner of the book
-      address owner = ownerOf(bookID);
-      
       // After books have been succefully accepted, reset mappings to false
       _committed[sender][receiver][bookID] = false;
       _committed[receiver][sender][bookID] = false;
@@ -370,13 +373,14 @@ contract BookLedger is ERC721 {
 
       // If book is a trade, trade the token now
       // remaining parameters updated in archiveBook
-      // else if the sender is the owner lending the book, set status as now being read
       if( _trade[sender][receiver][bookID] == true ) {
 	  transferFrom(sender, receiver, bookID);
       }
-      if( sender == owner && _trade[sender][receiver][bookID] == false ){
-	  _books[owner][bookID].reading = true;
+      // If the owner has received the book, set request off
+      if ( msg.sender == owner || _trade[sender][receiver][bookID] == true ) {
+            _books[owner][bookID].requested = false;
       }
+
     }
     /**
      * The book that was loaned is returned to the original owner.
@@ -402,13 +406,7 @@ contract BookLedger is ERC721 {
       require(!transmissionStatus(msg.sender, owner, bookID));
 
       // Set the book as being in transferance back to the owner
-      // to allow second acceptBook to pass requires, set book
-      // as committed
-      // the reader is now done reading
-      _committed[owner][msg.sender][bookID] = true;
-      _committed[msg.sender][owner][bookID] = true;
       _bookTransmission[msg.sender][owner][bookID] = true;
-      _books[owner][bookID].reading = false;
 
       // Emit that the book is now in transmission
       emit bookInTransmission( msg.sender, owner, bookID, true );
@@ -434,12 +432,12 @@ contract BookLedger is ERC721 {
       require(!transmissionStatus(requester, owner, bookID));
 
       // book should not be archived while it's out and being read
-      require(_books[owner][bookID].reading == false, "Book is still being read");
+      require(_books[owner][bookID].requested == false, "Book is still being read");
 
       // remove request from mapping
       delete _request[owner][requester][bookID];
 
-      // reset book availability, holder of the book, and
+      // reset book availability, holder of the book
       _books[owner][bookID].availability = true;
       _books[owner][bookID].holder = owner;
 
@@ -501,6 +499,7 @@ contract BookLedger is ERC721 {
       address owner = ownerOf(bookID);
       emit bookIsLost( owner, true, bookID);
 
+      // start a timer from when a complaint arrives
       if( _complaint[plaintiff][defendant][bookID] == false) {
 	  _timeout[plaintiff][defendant][bookID] = now + _delta;
 	  _complaint[plaintiff][defendant][bookID] = true;
@@ -518,7 +517,7 @@ contract BookLedger is ERC721 {
       if(now > delta_now || _approvedUser[plaintiff][bookID] == true) {
 	  refundEscrow( plaintiff, plaintiff, bookID );
 	  delete (_bookEscrow[defendant][plaintiff][bookID]);
-	  //_lostBooksList[defendant][bookID] = true;
+	  _lostBooksList[owner][bookID] = true;
 	  _books[owner][bookID].availability = false;
       } else {
 	  emit deltaTimeNotElapsed(now, delta_now);
@@ -555,11 +554,15 @@ contract BookLedger is ERC721 {
     function removeBook( address owner, uint256 bookID, bool burn )
 	public exists(bookID) returns(bool)
     {
-      // The only one who should be able to remove a book is the library or the
-      // owner of the book
-      require( msg.sender == owner || msg.sender == _minter);
+      // The only one who should be able to remove a book is the owner of the book
+      require( msg.sender == owner );
       require(_books[owner][bookID].exist);
 
+      // book should not be archived while it's out and being read
+      // but allow it to be remove if lost
+      require(_books[owner][bookID].requested == false || _lostBooksList[owner][bookID] == true, "Book is still being read");
+
+      
       // remove book from book list by swapping with last element in list
       // and update swapped book's pointer in book mapping
       uint256 rowToDelete = _books[owner][bookID].bookPointer;

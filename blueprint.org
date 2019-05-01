@@ -69,3 +69,23 @@ ganache-cli --allowUnlimitedContractSize
    - Alice does counter:     If Third party confirms Alice sent, she receives the deposit
                              Otherwise Alice is lying and Lorelai receives the deposit
    - Same incentive states as before
+** tests
+
+*** Negative
+
+ - should have correct initial state
+ - should not request book not in existence
+ - should not add a book that already exist existence
+ - should fail to remove a book that does not exist
+ - should fail to remove a book that is not owner
+ - should fail to remove a book while checked out
+ - should not allow library to request book from itself
+ - should not allow book to be requested if checked out
+ - should fail to check out a book once book has been transmitted
+ - should fail to fail to return book with same receiver and sender
+ - should fail to archive book while out of the library
+ - should fail to commit escrow if book isnt committed
+ - should fail to loan a book already loaned out
+ - should fail if someone else tries to archive Book
+ - should fail to return book if library already holds possesion
+

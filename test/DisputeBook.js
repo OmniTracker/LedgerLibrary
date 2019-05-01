@@ -83,7 +83,7 @@ contract('DisputeBook', async function (accounts) {
     // book is not archived as it can be considered lost in transmission
     let refundAmount = await bookLedger.bookEscrow( accounts[5], accounts[3], 420013 )
     await bookLedger.rejectBook( accounts[3], accounts[5], 420013, {from: accounts[3], value: refundAmount} )
-      await bookLedger.verifiedDefense( accounts[3], accounts[5], 420013, {from: accounts[5], value: refundAmount} )
+    await bookLedger.verifiedDefense( accounts[3], accounts[5], 420013, {from: accounts[5], value: refundAmount} )
     await bookLedger.removeBook( accounts[5], 420013, false, {from: accounts[5]})  
 
     // Expected state Changes
