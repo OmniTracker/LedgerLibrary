@@ -1,4 +1,3 @@
-
 pragma solidity ^0.4.24;
 import "./Tokens/ERC721.sol";
 import "./Support/SafeMath.sol";
@@ -17,7 +16,7 @@ contract BookLedger is ERC721 {
   event bookRequested(address owner, address requester, uint256 bookID);
   event escrowCommitted(address newOwner, uint256 escrowAmount );
   event bookInTransmission(address currentOwner, address tempOwner, uint256 bookID, bool InTransmission );
-  event bookReceived(bool transmissionComplete, string bookCondition );
+  event bookReceived(bool transmissionComplete );
   event bookIsLost(address bookOwner, bool bookLost, uint256 bookID);
   event escrowRefunded(address recipient, uint256 amount);
   event startTimerForDefense( address plaintiff, address defendant, uint256 startTimer);
@@ -25,10 +24,11 @@ contract BookLedger is ERC721 {
 
   // index books by entity address and bookID
   mapping(address => mapping(uint256 => Book)) internal _books;
+  
   // _booksList contains a list of all books owned by an entity
   mapping(address => uint256[]) internal _booksList;
-  // _lostBooksList contains a mapping of all the lost books in the universe
-  // not implemented. Lost is set as a parameter of the book
+  
+  // _lostBooksList contains a mapping of all the lost books in universe
   mapping(address => mapping(uint256 => bool)) internal _lostBooksList;
 
   // boolean mapping of book requested
@@ -86,7 +86,6 @@ contract BookLedger is ERC721 {
     uint256 bookPointer;
     uint256 timeOfOrigin;
     bool availability;
-    string condition;
     uint256 genre;
     string country;
     string publisher;
@@ -94,6 +93,7 @@ contract BookLedger is ERC721 {
     string name;
     bool exist;
     address holder;
+    bool reading;
   }
 
   /**
@@ -105,8 +105,7 @@ contract BookLedger is ERC721 {
                       string country,
                       string publisher,
                       string author,
-                      string name,
-		      string condition)
+                      string name)
       public returns(uint256)
    {
      Book memory book = Book({
@@ -114,14 +113,14 @@ contract BookLedger is ERC721 {
        bookPointer: 0,
        timeOfOrigin: now,
        availability: true,
-       condition: condition,
        genre: genre,
        country: country,
        publisher: publisher,
        author: author,
        name: name,
        exist: true,
-       holder: owner
+       holder: owner,
+       reading: false
      });
       // Require the book id does not exist in the _books mapping
       require(!_books[owner][bookID].exist);
@@ -207,8 +206,7 @@ contract BookLedger is ERC721 {
      require(!isBookCommitted( msg.sender, owner, bookID));
      require(!transmissionStatus( msg.sender, owner, bookID));
 
-     // base case, book is being loaned. Set mapping in the case the book
-     // is being traded
+     // base case, book is being loaned. Set mapping in the case the book is being traded
      // the trade is from the owner to the requester (msg.sender) for the book
      if( trade == true) {
 	 _trade[owner][msg.sender][bookID] = true;
@@ -339,7 +337,7 @@ contract BookLedger is ERC721 {
       * sender: owner of bookID sent to receiver
       * receiver: new or temp owner of bookID requested from sender
       */
-    function acceptBook( address sender, address receiver, uint256 bookID, string condition ) public exists(bookID) {
+    function acceptBook( address sender, address receiver, uint256 bookID ) public exists(bookID) {
 
       // The person recieving the book should be the only one who should be able
       // to accept the book.
@@ -360,29 +358,30 @@ contract BookLedger is ERC721 {
       // between the two users.
       require(transmissionStatus(sender,receiver,bookID));
 
-      // set the condition the book was received in
-      // Question: Do we want the receiver to be able to update the condition of the book?
-      _books[sender][bookID].condition = condition;
+      // get the address of the owner of the book
+      address owner = ownerOf(bookID);
       
       // After books have been succefully accepted, reset mappings to false
       _committed[sender][receiver][bookID] = false;
       _committed[receiver][sender][bookID] = false;
       _bookTransmission[sender][receiver][bookID] = false;
 
-      emit bookReceived( true, condition );
+      emit bookReceived( true );
 
       // If book is a trade, trade the token now
       // remaining parameters updated in archiveBook
-      if( _trade[sender][receiver][bookID] == true) {
+      // else if the sender is the owner lending the book, set status as now being read
+      if( _trade[sender][receiver][bookID] == true ) {
 	  transferFrom(sender, receiver, bookID);
+      }
+      if( sender == owner && _trade[sender][receiver][bookID] == false ){
+	  _books[owner][bookID].reading = true;
       }
     }
     /**
      * The book that was loaned is returned to the original owner.
-     REMOVED newOwner, decided this address should always be the message sender
-     REMOVED condition, should not update condition when returning
+     *
      * owner: address of the bookID that owned the book before request
-     * newOwner: 
      * msg.sender: address that requested a book loan for bookID from owner
      */
     function returnBook( address owner, uint256 bookID ) exists(bookID) public
@@ -405,9 +404,11 @@ contract BookLedger is ERC721 {
       // Set the book as being in transferance back to the owner
       // to allow second acceptBook to pass requires, set book
       // as committed
+      // the reader is now done reading
       _committed[owner][msg.sender][bookID] = true;
       _committed[msg.sender][owner][bookID] = true;
       _bookTransmission[msg.sender][owner][bookID] = true;
+      _books[owner][bookID].reading = false;
 
       // Emit that the book is now in transmission
       emit bookInTransmission( msg.sender, owner, bookID, true );
@@ -420,7 +421,7 @@ contract BookLedger is ERC721 {
      *  owner: address that originally owned the book and loaned it to the requester
      *  requester: the reader that took out the book from the owner
     */
-    function archiveBook( address owner, address requester, uint256 bookID, string condition ) public exists(bookID) {
+    function archiveBook( address owner, address requester, uint256 bookID ) public exists(bookID) {
 
       // book archived should be the one that was requested
       require(isBookRequested(owner, requester, bookID));
@@ -428,18 +429,19 @@ contract BookLedger is ERC721 {
       // check the book is not available
       require(!isBookAvailable(owner, bookID));
 
-      // reset transmission status and request status if not
-      // updated via accepting book
-      //_bookTransmission[requester][owner][bookID] = false;
-      
+      // book should not be in transit
+      require(!transmissionStatus(owner, requester, bookID));
+      require(!transmissionStatus(requester, owner, bookID));
+
+      // book should not be archived while it's out and being read
+      require(_books[owner][bookID].reading == false, "Book is still being read");
+
       // remove request from mapping
       delete _request[owner][requester][bookID];
 
       // reset book availability, holder of the book, and
-      // the condition after the book has been traveling
       _books[owner][bookID].availability = true;
       _books[owner][bookID].holder = owner;
-      _books[owner][bookID].condition = condition;
 
       // allow the user to receive their escrow
       _approvedUser[requester][bookID] = true;
@@ -482,7 +484,7 @@ contract BookLedger is ERC721 {
     }
 
     /** rejectBook. Reject a book either because it was lost in transmission or
-     *  damamged. Whether the person lies about this doesn't matter as they've
+     *  damaged. Whether the person lies about this doesn't matter as they've
      *  already placed an escrow to the contract.
      *
      *  Either party may call this function.
@@ -574,14 +576,7 @@ contract BookLedger is ERC721 {
       if ( _lostBooksList[owner][bookID] != true && burn == false ) {
 	  delete ( _books[owner][bookID] );
       }
-
-      // Question: If the book is found, how will it be added back into circulation?
-      // I originally thought we were going to just burn the book if it is lost, then
-      // just re add the book with new book to make this process less complicated.
-      // If a book is lost and not burned, we would have to have a function to check
-      // if the token still exist, then up date the books list mappings without adding
-      // an additional token.
-      // Addressed in foundBook function
+      
       if( burn ) {
 	  _burn(owner, bookID);
       }

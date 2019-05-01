@@ -1,9 +1,7 @@
 const utils = require('./Utils')
 const BigNumber = require('bignumber.js')
 
-//const CryptoBears = utils.CryptoBears
 const BookLedger = utils.BookLedger
-//const generateHash = utils.generateHash
 const checkState = utils.checkState
 const checkEvent = utils.checkEvent
 const zero40 = utils.zero40
@@ -11,15 +9,10 @@ const pause = utils.pause
 const minEscrow = utils.minEscrow
 const maxEscrow = utils.maxEscrow
 
-//const minEscrow = 0
-//const maxEscrow = 1000
-//const maxBookCount = 3
-//const rentalInterval = 200
-
 contract('PositiveTestsBookLedger', async function (accounts) {
 
   beforeEach('Make fresh contract', async function () {
-    bookLedger = await BookLedger.new( // We let accounts[5] represent the mintr.
+    bookLedger = await BookLedger.new( // We let accounts[5] represent the minter
 	accounts[5], minEscrow)
   })
 
@@ -30,15 +23,15 @@ contract('PositiveTestsBookLedger', async function (accounts) {
   it('should check add book', async function () {
     // Add first book
     assert.equal(await bookLedger.numberOfBookInLibrary( accounts[5] ), 0)
-    let bookID_1 = (await bookLedger.newBook.call(accounts[5], 420010, 0,'Canada','Blueno','Jane Doe','Living Fiction', 'Great', {from: accounts[5]} )).toNumber()
+    let bookID_1 = (await bookLedger.newBook.call(accounts[5], 420010, 0,'Canada','Blueno','Jane Doe','Living Fiction', {from: accounts[5]} )).toNumber()
     assert.equal(bookID_1, 420010)
-    await bookLedger.newBook(accounts[5], 420010, 0,'Canada','Blueno','Jane Doe','Living Fiction', 'Great', {from: accounts[5]} )
+    await bookLedger.newBook(accounts[5], 420010, 0,'Canada','Blueno','Jane Doe','Living Fiction', {from: accounts[5]} )
     console.log("Number of books after adding first book", await bookLedger.numberOfBookInLibrary( accounts[5] ))
     assert.equal(await bookLedger.numberOfBookInLibrary( accounts[5] ), 1)
     // Add second book
-    let bookID_2 = (await bookLedger.newBook.call(accounts[5], 420011,0,'USA','Watson','John Doe','Bears on Ice', 'Great', {from: accounts[5]} )).toNumber()
+    let bookID_2 = (await bookLedger.newBook.call(accounts[5], 420011,0,'USA','Watson','John Doe','Bears on Ice', {from: accounts[5]} )).toNumber()
     assert.equal(bookID_2, 420011)
-    await bookLedger.newBook(accounts[5], 420011,0,'USA','Watson','John Doe','Bears on Ice', 'Great', {from: accounts[5]} )
+    await bookLedger.newBook(accounts[5], 420011,0,'USA','Watson','John Doe','Bears on Ice', {from: accounts[5]} )
     console.log("Number of books after adding second book", await bookLedger.numberOfBookInLibrary( accounts[5] ))
     assert.equal(await bookLedger.numberOfBookInLibrary( accounts[5] ), 2)
     // Expected state Changes
@@ -53,14 +46,14 @@ contract('PositiveTestsBookLedger', async function (accounts) {
   it('should remove book', async function () {
     // Add first book
     assert.equal(await bookLedger.numberOfBookInLibrary( accounts[5] ), 0)
-    let bookID_1 = (await bookLedger.newBook.call(accounts[5], 420010, 0,'Canada','Blueno','Jane Doe','Living Fiction', 'Great', {from: accounts[5]} )).toNumber()
+    let bookID_1 = (await bookLedger.newBook.call(accounts[5], 420010, 0,'Canada','Blueno','Jane Doe','Living Fiction', {from: accounts[5]} )).toNumber()
     assert.equal(bookID_1, 420010)
-    await bookLedger.newBook(accounts[5], 420010, 0,'Canada','Blueno','Jane Doe','Living Fiction', 'Great', {from: accounts[5]} )
+    await bookLedger.newBook(accounts[5], 420010, 0,'Canada','Blueno','Jane Doe','Living Fiction', {from: accounts[5]} )
     assert.equal(await bookLedger.numberOfBookInLibrary( accounts[5] ), 1)
     // Add second book
-    let bookID_2 = (await bookLedger.newBook.call(accounts[5], 420011,0,'USA','Watson','John Doe','Bears on Ice', 'Great', {from: accounts[5]} )).toNumber()
+    let bookID_2 = (await bookLedger.newBook.call(accounts[5], 420011,0,'USA','Watson','John Doe','Bears on Ice', {from: accounts[5]} )).toNumber()
     assert.equal(bookID_2, 420011)
-    await bookLedger.newBook(accounts[5], 420011,0,'USA','Watson','John Doe','Bears on Ice', 'Great',{from: accounts[5]} )
+    await bookLedger.newBook(accounts[5], 420011,0,'USA','Watson','John Doe','Bears on Ice',{from: accounts[5]} )
     assert.equal(await bookLedger.numberOfBookInLibrary( accounts[5] ), 2)
     // Remove first book
     await bookLedger.removeBook(accounts[5], bookID_1, true, {from:accounts[5]} )
@@ -75,8 +68,8 @@ contract('PositiveTestsBookLedger', async function (accounts) {
   })
   it('Should create two books in the library and send them to two separate users', async function () {
       // Add book for librarian (account[5])
-        await bookLedger.newBook(accounts[5], 420013, 4, 'United States', 'Doubleday', 'Dan Simmons', 'Hyperion', 'Great', {from: accounts[5]} )
-        await bookLedger.newBook(accounts[5], 420014, 4, 'Canada','Blueno','Jane Doe','Living Fiction', 'Great', {from: accounts[5]} )
+        await bookLedger.newBook(accounts[5], 420013, 4, 'United States', 'Doubleday', 'Dan Simmons', 'Hyperion', {from: accounts[5]} )
+        await bookLedger.newBook(accounts[5], 420014, 4, 'Canada','Blueno','Jane Doe','Living Fiction', {from: accounts[5]} )
         console.log("books added to library")
 
         // There should be two book in the library
@@ -124,35 +117,34 @@ contract('PositiveTestsBookLedger', async function (accounts) {
 
         // confirm Alice received book
         await bookLedger.approve(accounts[3], 420013, {from: accounts[5]})
-        await bookLedger.acceptBook( accounts[5], accounts[3], 420013, "Great!", {from: accounts[3]} )
+        await bookLedger.acceptBook( accounts[5], accounts[3], 420013, {from: accounts[3]} )
         let bookReceived1 = await bookLedger.transmissionStatus(accounts[5], accounts[3], 420013)
         console.log("Is book still in transmission after Alice confirmed acceptance of the book?", bookReceived1)
 
         // confirm Bob recieved book
 	await bookLedger.approve(accounts[4], 420014, {from: accounts[5]})
-        await bookLedger.acceptBook( accounts[5], accounts[4], 420014, "Good", {from: accounts[4]} )
+        await bookLedger.acceptBook( accounts[5], accounts[4], 420014, {from: accounts[4]} )
         let bookReceived2 = await bookLedger.transmissionStatus(accounts[5], accounts[4], 420014)
         console.log("Is book still in transmission after Bob confirmed acceptance of the book?", bookReceived2)
 
       // Alice receive her escrow
-      await bookLedger.archiveBook( accounts[5], accounts[3], 420013, "Great!", {from: accounts[3]} )
-      await bookLedger.refundEscrow( accounts[3], accounts[3], 420013);
+      await bookLedger.archiveBook( accounts[5], accounts[3], 420013, {from: accounts[3]} )
+      await bookLedger.refundEscrow( accounts[3], accounts[3], 420013, {from: accounts[3]} );
 
       // Bob  receive his escrow
-      await bookLedger.archiveBook( accounts[5], accounts[4], 420014, "Good", {from: accounts[4]} )
-      await bookLedger.refundEscrow( accounts[4], accounts[4], 420014);
+      await bookLedger.archiveBook( accounts[5], accounts[4], 420014, {from: accounts[4]} )
+      await bookLedger.refundEscrow( accounts[4], accounts[4], 420014, {from: accounts[3]} );
 
       // Need to add code to test whether a book is transfered between two user without the help of the.
       // library.
 
-        // Expected state Changes
-        let bookLedgerStateChanges = [
-    	    {'var': 'ownerOf.b3', 'expect': accounts[3]},
-	    {'var': 'ownerOf.b4', 'expect': accounts[4]},
-	    {'var': 'bookEscrow.b5b3', 'expect': 2},
-	    {'var': 'bookEscrow.b5b4', 'expect': 2},
-	    
-        ]
+      // Expected state Changes
+      let bookLedgerStateChanges = [
+    	  {'var': 'ownerOf.b3', 'expect': accounts[3]},
+	  {'var': 'ownerOf.b4', 'expect': accounts[4]},
+	  {'var': 'bookEscrow.b5b3', 'expect': 2},
+	  {'var': 'bookEscrow.b5b4', 'expect': 2},
+      ]
 
         // Check state after done
         await checkState([bookLedger], [bookLedgerStateChanges], accounts)
@@ -164,7 +156,7 @@ contract('PositiveTestsBookLedger', async function (accounts) {
     // accounts[5] = librarian
     // accounts[3] = Alice
     // Add book for librarian
-    await bookLedger.newBook(accounts[5], 420013, 4, 'United States', 'Doubleday', 'Dan Simmons', 'Hyperion', 'Great', {from: accounts[5]} )
+    await bookLedger.newBook(accounts[5], 420013, 4, 'United States', 'Doubleday', 'Dan Simmons', 'Hyperion', {from: accounts[5]} )
     assert.equal(await bookLedger.numberOfBookInLibrary( accounts[5] ), 1)
 
     // Alice request book from librarian
@@ -189,7 +181,7 @@ contract('PositiveTestsBookLedger', async function (accounts) {
     console.log("Librarian has sent out book to Alice?", bookInTransmission)
 
     // confirm Alice received book
-    await bookLedger.acceptBook( accounts[5], accounts[3], 420013, "Great", {from: accounts[3]} )
+    await bookLedger.acceptBook( accounts[5], accounts[3], 420013, {from: accounts[3]} )
     let bookReceived = await bookLedger.transmissionStatus(accounts[5], accounts[3], 420013)
     //assert( await bookLedger.transmissionStatus(accounts[5], accounts[3], 420013), false) //failing, why?
     console.log("Is book still in transmission after Alice confirmed acceptance of the book?", bookReceived)
@@ -201,10 +193,10 @@ contract('PositiveTestsBookLedger', async function (accounts) {
 
     // Library accepts book Alice sent back
     //await bookLedger.approve(accounts[3], 420013, {from: accounts[5]})
-    await bookLedger.acceptBook( accounts[3], accounts[5], 420013, "Great", {from: accounts[5]} )
+    await bookLedger.acceptBook( accounts[3], accounts[5], 420013, {from: accounts[5]} )
 
     // transaction is complete, put book back on bookshelf
-    await bookLedger.archiveBook( accounts[5], accounts[3], 420013, "Great", {from: accounts[5]} )
+    await bookLedger.archiveBook( accounts[5], accounts[3], 420013, {from: accounts[5]} )
     console.log("Alice has successfully returned the book and the library has put it back on the self")
 
     // Refund Escrow amount back to Alice, the one that put up an escrow to request the book
@@ -225,7 +217,7 @@ contract('PositiveTestsBookLedger', async function (accounts) {
     // accounts[5] = lorelai
     // accounts[3] = Alice
     // Add book for librarian
-    await bookLedger.newBook(accounts[5], 420013, 4, 'United States', 'Doubleday', 'Dan Simmons', 'Hyperion', 'Great', {from: accounts[5]} )
+    await bookLedger.newBook(accounts[5], 420013, 4, 'United States', 'Doubleday', 'Dan Simmons', 'Hyperion', {from: accounts[5]} )
 
     // Alice request book from librarian
     await bookLedger.requestBook( accounts[5], 420013, true, {from: accounts[3]} )
@@ -241,10 +233,10 @@ contract('PositiveTestsBookLedger', async function (accounts) {
 
     // confirm Alice received book
     await bookLedger.approve(accounts[3], 420013, {from: accounts[5]})
-    await bookLedger.acceptBook( accounts[5], accounts[3], 420013, "Great", {from: accounts[3]} )
+    await bookLedger.acceptBook( accounts[5], accounts[3], 420013, {from: accounts[3]} )
 
     // Alice puts the book on her bookshelf
-    await bookLedger.archiveBook( accounts[5], accounts[3], 420013, "Great", {from: accounts[3]} )
+    await bookLedger.archiveBook( accounts[5], accounts[3], 420013, {from: accounts[3]} )
     console.log("Alice has successfully put the book she received from the library on on her bookshelf")
 
     // Refund Escrow amount back to the original owner
@@ -264,11 +256,11 @@ contract('PositiveTestsBookLedger', async function (accounts) {
     // accounts[5] = lorelai
     // accounts[3] = Alice
     // Add three books for librarian (lorelai) and two for alice
-    await bookLedger.newBook(accounts[5], 420010, 4, 'Great Britain', 'Osgood', 'Thomas Hardy', 'Tess of the D\'Urbervilles', 'Good', {from: accounts[5]} )
-    await bookLedger.newBook(accounts[5], 420011, 4, 'Great Britain', 'Newby', 'Emily Bronte', 'Wuthering Heights', 'Great', {from: accounts[5]} )
-    await bookLedger.newBook(accounts[5], 420012, 4, 'Great Britain', 'HarperCollins', 'Aldous Huxley', 'Brave New World', 'Worn', {from: accounts[5]} )      
-    await bookLedger.newBook(accounts[3], 420013, 4, 'United States', 'Doubleday', 'Dan Simmons', 'Hyperion', 'Great', {from: accounts[3]} )
-    await bookLedger.newBook(accounts[3], 420014, 4, 'Great Britain', 'Bloomsbury', 'J K Rowling', 'Harry Potter and the Sorcerer\'s Stone', 'Great', {from: accounts[3]} )      
+    await bookLedger.newBook(accounts[5], 420010, 4, 'Great Britain', 'Osgood', 'Thomas Hardy', 'Tess of the D\'Urbervilles', {from: accounts[5]} )
+    await bookLedger.newBook(accounts[5], 420011, 4, 'Great Britain', 'Newby', 'Emily Bronte', 'Wuthering Heights', {from: accounts[5]} )
+    await bookLedger.newBook(accounts[5], 420012, 4, 'Great Britain', 'HarperCollins', 'Aldous Huxley', 'Brave New World', {from: accounts[5]} )      
+    await bookLedger.newBook(accounts[3], 420013, 4, 'United States', 'Doubleday', 'Dan Simmons', 'Hyperion', {from: accounts[3]} )
+    await bookLedger.newBook(accounts[3], 420014, 4, 'Great Britain', 'Bloomsbury', 'J K Rowling', 'Harry Potter and the Sorcerer\'s Stone', {from: accounts[3]} )      
 
     let bookRequest = 420010;
     let escrow = 300
@@ -287,10 +279,10 @@ contract('PositiveTestsBookLedger', async function (accounts) {
 
     // confirm Alice received book
     await bookLedger.approve(accounts[3], bookRequest, {from: accounts[5]})
-    await bookLedger.acceptBook( accounts[5], accounts[3], bookRequest, "Great", {from: accounts[3]} )
+    await bookLedger.acceptBook( accounts[5], accounts[3], bookRequest, {from: accounts[3]} )
 
     // Alice puts the book on her bookshelf
-    await bookLedger.archiveBook( accounts[5], accounts[3], bookRequest, "Great", {from: accounts[3]} )
+    await bookLedger.archiveBook( accounts[5], accounts[3], bookRequest, {from: accounts[3]} )
     console.log("Alice has successfully put the book she received from the library on on her bookshelf")
       
     // Book has been added to Alice's booklist,
