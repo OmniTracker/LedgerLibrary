@@ -255,7 +255,6 @@ contract('NegativeTestsBookLedger', async function (accounts) {
     // confirm Alice received book
     await bookLedger.acceptBook( accounts[5], accounts[3], 420013, {from: accounts[3]} )
     let bookReceived = await bookLedger.transmissionStatus(accounts[5], accounts[3], 420013)
-    //assert( await bookLedger.transmissionStatus(accounts[5], accounts[3], 420013), false) //failing, why?
     console.log("Is book still in transmission after Alice confirmed acceptance of the book?", bookReceived)
 
     // Alice has finished reading book and sends it back to the library
@@ -316,7 +315,6 @@ contract('NegativeTestsBookLedger', async function (accounts) {
     // confirm Alice received book
     await bookLedger.acceptBook( accounts[5], accounts[3], 420013, {from: accounts[3]} )
     let bookReceived = await bookLedger.transmissionStatus(accounts[5], accounts[3], 420013)
-    //assert( await bookLedger.transmissionStatus(accounts[5], accounts[3], 420013), false) //failing, why?
     console.log("Is book still in transmission after Alice confirmed acceptance of the book?", bookReceived)
 
     // Library tries to return the book to itself without using Alices address information. This should fail.
@@ -504,7 +502,6 @@ contract('NegativeTestsBookLedger', async function (accounts) {
     // confirm Alice received book
     await bookLedger.acceptBook( accounts[5], accounts[3], 420013, {from: accounts[3]} )
     let bookReceived = await bookLedger.transmissionStatus(accounts[5], accounts[3], 420013)
-    //assert( await bookLedger.transmissionStatus(accounts[5], accounts[3], 420013), false) //failing, why?
     console.log("Is book still in transmission after Alice confirmed acceptance of the book?", bookReceived)
 
     // Alice tries to archive book, but she is not the owner

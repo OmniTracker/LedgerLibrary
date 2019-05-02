@@ -92,5 +92,4 @@ contract('DisputeBook', async function (accounts) {
     await checkState([bookLedger], [bookLedgerStateChanges], accounts)
   })
 
-
 })

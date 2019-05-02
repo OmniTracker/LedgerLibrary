@@ -3,9 +3,9 @@ import "./Tokens/ERC721.sol";
 import "./Support/SafeMath.sol";
 
 /**
- * This contract inherits from ERC721
-    Every User/address/entity has a library of books. Calling this contract is
-    equivalent to creating their own library.
+ * This contract inherits from ERC721 to create non-fungible
+   tokens for books with unique bookIDs. Allows users to trade
+   and loan books.
  */
 contract BookLedger is ERC721 {
   string public constant contractName = 'BookLedger';
@@ -277,8 +277,6 @@ contract BookLedger is ERC721 {
      require(receiver == msg.sender);
 
      // Give the contract the escrow as security deposit
-     // Question: Was transfering to sender under previous Library assumption?
-     // sender.transfer(escrow);
      _contractEscrow[receiver] = _contractEscrow[receiver].add(escrow);
 
      // Change status of the receiver as having committed their security deposit
@@ -303,7 +301,6 @@ contract BookLedger is ERC721 {
 
       // require the book to exist. If the book does not exist, then the book cannot be
       // checked out.
-      // Question: difference between _books.exist and exists(bookID)
       require(_books[owner][bookID].exist);
 
       // book should be requested from owner to requester
@@ -522,6 +519,7 @@ contract BookLedger is ERC721 {
       } else {
 	  emit deltaTimeNotElapsed(now, delta_now);
 	  // test case, after calling once, allow override to withdraw funds
+	  // this else statement should not be included in a final product!
 	  _approvedUser[plaintiff][bookID] = true;
       }
     }

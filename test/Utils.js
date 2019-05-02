@@ -20,7 +20,6 @@ const rentalInterval = 200
 const delta = 0
 
 
-
 let accountBalances = {}
 
 // Checks whether an event was properly emmitted.
@@ -121,49 +120,6 @@ async function actualState(token, state, accounts, name) {
 	  (await token.bookEscrow.call(accounts[5], accounts[4], 420014)).toNumber(),
     ]
     break
-    case 'CryptoBears':
-    values = [
-      (await token.balanceOf.call(accounts[0])).toNumber(),
-      (await token.balanceOf.call(accounts[1])).toNumber(),
-      (await token.balanceOf.call(accounts[2])).toNumber(),
-      (await token.balanceOf.call(accounts[3])).toNumber(),
-      (await token.balanceOf.call(accounts[4])).toNumber(),
-      (await token.balanceOf.call(accounts[5])).toNumber(),
-      (await token.balanceOf.call(accounts[6])).toNumber(),
-      (await token.balanceOf.call(accounts[7])).toNumber(),
-      await token.ownerOf.call(0),
-      await token.ownerOf.call(1),
-      await token.ownerOf.call(2),
-      await token.ownerOf.call(3),
-      await token.ownerOf.call(4),
-      await token.isCommitted.call(0, 0),
-      await token.isCommitted.call(0, 1),
-      await token.isCommitted.call(0, 2),
-      await token.isCommitted.call(0, 3),
-      await token.isCommitted.call(0, 4),
-      await token.isCommitted.call(1, 0),
-      await token.isCommitted.call(1, 1),
-      await token.isCommitted.call(1, 2),
-      await token.isCommitted.call(1, 3),
-      await token.isCommitted.call(1, 4),
-      await token.isCommitted.call(2, 0),
-      await token.isCommitted.call(2, 1),
-      await token.isCommitted.call(2, 2),
-      await token.isCommitted.call(2, 3),
-      await token.isCommitted.call(2, 4),
-      await token.isCommitted.call(3, 0),
-      await token.isCommitted.call(3, 1),
-      await token.isCommitted.call(3, 2),
-      await token.isCommitted.call(3, 3),
-      await token.isCommitted.call(3, 4),
-      await token.isCommitted.call(4, 0),
-      await token.isCommitted.call(4, 1),
-      await token.isCommitted.call(4, 2),
-      await token.isCommitted.call(4, 3),
-      await token.isCommitted.call(4, 4),
-      await token._minter.call(),
-    ]
-    break
     default:
     throw new Error('Contract name not recognized ' + name)
   }
@@ -195,8 +151,8 @@ module.exports = {
   expectRevert: expectRevert,
   zero40: zero40,
   zero64: zero64,
-    minEscrow: minEscrow,
-    maxEscrow: maxEscrow,
-    delta: delta,
+  minEscrow: minEscrow,
+  maxEscrow: maxEscrow,
+  delta: delta,
   pause: pause,
 }
