@@ -16,11 +16,11 @@ contract('NegativeTestsBookLedger', async function (accounts) {
     bookLedger = await BookLedger.new( // We let accounts[5] represent the minter
 	accounts[5], minEscrow)
   })
-    
+
   it('should have correct initial state', async function () {
     await checkState([bookLedger], [[]], accounts)
   })
-    
+
   it('should not request book not in existence', async function() {
     // add a book
     await bookLedger.newBook(accounts[5], 420013, 4, 'United States', 'Doubleday', 'Dan Simmons', 'Hyperion', {from: accounts[5]} )
@@ -83,8 +83,8 @@ contract('NegativeTestsBookLedger', async function (accounts) {
 	{'var': 'ownerOf.b1', 'expect': zero40},
     ]
     await checkState([bookLedger], [bookLedgerStateChanges], accounts)
-  })    
-    
+  })
+
   it('should fail to remove a book that is not owner', async function () {
 
     // Add first book
@@ -109,7 +109,7 @@ contract('NegativeTestsBookLedger', async function (accounts) {
     // Add first book
     await bookLedger.newBook(accounts[5], 420013, 4, 'United States', 'Doubleday', 'Dan Simmons', 'Hyperion', {from: accounts[5]} )
     assert.equal(await bookLedger.numberOfBookInLibrary( accounts[5] ), 1)
-      
+
     // Alice request book from librarian
     await bookLedger.requestBook( accounts[5], 420013, false, {from: accounts[3]} )
 
@@ -133,7 +133,7 @@ contract('NegativeTestsBookLedger', async function (accounts) {
     await expectRevert(bookLedger.removeBook(accounts[5], 420013, true, {from:accounts[5]} ))
     assert.equal(await bookLedger.numberOfBookInLibrary( accounts[5] ), 1)
     console.log("The library tries to remove the book while it's out in transission")
-      
+
     // Expected state Changes
     let bookLedgerStateChanges = [
 	{'var': 'ownerOf.b3', 'expect': accounts[5]},
@@ -141,7 +141,7 @@ contract('NegativeTestsBookLedger', async function (accounts) {
     ]
     await checkState([bookLedger], [bookLedgerStateChanges], accounts)
   })
-    
+
   it('should not allow library to request book from itself', async function() {
     // add a book
     await bookLedger.newBook(accounts[5], 420013, 4, 'United States', 'Doubleday', 'Dan Simmons', 'Hyperion', {from: accounts[5]} )
@@ -161,11 +161,11 @@ contract('NegativeTestsBookLedger', async function (accounts) {
     // accounts[5] = librarian
     // accounts[4] = Bob
     // accounts[3] = Alice
-      
+
     // Add book for librarian
     await bookLedger.newBook(accounts[5], 420013, 4, 'United States', 'Doubleday', 'Dan Simmons', 'Hyperion', {from: accounts[5]} )
     assert.equal(await bookLedger.numberOfBookInLibrary( accounts[5] ), 1)
-      
+
     // Alice request book from librarian
     await bookLedger.requestBook( accounts[5], 420013, false, {from: accounts[3]} )
 
@@ -195,9 +195,9 @@ contract('NegativeTestsBookLedger', async function (accounts) {
     await bookLedger.acceptBook( accounts[5], accounts[3], 420013, {from: accounts[3]} )
     let bookReceived = await bookLedger.transmissionStatus(accounts[5], accounts[3], 420013)
     // failing, take out
-    //assert( await bookLedger.transmissionStatus(accounts[5], accounts[3], 420013), false) 
+    //assert( await bookLedger.transmissionStatus(accounts[5], accounts[3], 420013), false)
     console.log("Is book still in transmission after Alice confirmed acceptance of the book?", bookReceived)
-    
+
     // Alice has finished reading book and sends it back to the library
     await bookLedger.returnBook( accounts[5], 420013, {from: accounts[3]} )
     let bookInTransmissionReturned = await bookLedger.transmissionStatus(accounts[3], accounts[5], 420013)
@@ -267,7 +267,7 @@ contract('NegativeTestsBookLedger', async function (accounts) {
     await bookLedger.acceptBook( accounts[3], accounts[5], 420013, {from: accounts[5]} )
     await bookLedger.archiveBook( accounts[5], accounts[3], 420013, {from: accounts[5]} )
     console.log("Alice has successfully returned the book and the library has put it back on the self")
-    
+
     // Refund Escrow amount back to the original owner
     let refundAmount = await bookLedger.bookEscrow( accounts[5], accounts[3], 420013 );
     await bookLedger.refundEscrow( accounts[3], accounts[3], 420013, {from: accounts[3], value: refundAmount })
@@ -426,7 +426,7 @@ contract('NegativeTestsBookLedger', async function (accounts) {
     // Check state after done
     await checkState([bookLedger], [bookLedgerStateChanges], accounts)
   })
-    
+
   it('should fail to loan a book already loaned out', async function () {
     // accounts[5] = librarian
     // accounts[4] = Bob
@@ -463,7 +463,7 @@ contract('NegativeTestsBookLedger', async function (accounts) {
 
     // alice should not be able to commit the book to loan out to anyone else
     await expectRevert(bookLedger.requestBook( accounts[3], 420013, false, {from: accounts[4]} ))
-      
+
     // Expected state Changes
     let bookLedgerStateChanges = [
 	{'var': 'ownerOf.b3', 'expect': accounts[5]},
@@ -587,5 +587,101 @@ contract('NegativeTestsBookLedger', async function (accounts) {
   // Check state after done
   await checkState([bookLedger], [bookLedgerStateChanges], accounts)
   })
+
+
+  it('Should fail to return escrow to Lorelai when complaint from Alice with verified counter from Lorelai due to incorrect escrow amount.', async function () {
+    // accounts[5] = lorelai
+    // accounts[3] = Alice
+    // Add book for librarian
+    await bookLedger.newBook(accounts[5], 420013, 4, 'United States', 'Doubleday', 'Dan Simmons', 'Hyperion', {from: accounts[5]} )
+
+    // Alice request book from librarian
+    await bookLedger.requestBook( accounts[5], 420013, false, {from: accounts[3]} )
+
+    // confirm escrow amount set by librarian
+    let escrow = 1;
+    await bookLedger.commitBook( accounts[5], accounts[3], 420013, escrow, {from: accounts[5]} )
+
+    // confirm Alice meets escrow amount
+    await bookLedger.commitEscrow( accounts[5], accounts[3], 420013, {from: accounts[3], value: escrow} )
+
+    // confirm Librarian sent book by putting in transmission
+    await bookLedger.sendBook( accounts[5], accounts[3], 420013, {from: accounts[5]} )
+
+    // refund escrow to Alice, set Lorelai's book to lost
+    // book is not archived as it can be considered lost in transmission
+    // better to do all function calls such as refunding, and removing done from here,
+    // or internally in rejectBook()?
+    // let refundAmount = await bookLedger.bookEscrow( accounts[5], accounts[3], 420013 )
+
+    // Alice tries to receive more money than what she paid for the book. This fails
+    await expectRevert( bookLedger.rejectBook( accounts[3], accounts[5], 420013, {from: accounts[3], value: 100} ) )
+    await expectRevert( bookLedger.verifiedDefense( accounts[3], accounts[5], 420013, {from: accounts[5], value: 100} ) )
+
+    // Alice relize she wont be able to get any money back unless she complies with the original amount set
+    let refundAmount = await bookLedger.bookEscrow( accounts[5], accounts[3], 420013 )
+    await bookLedger.rejectBook( accounts[3], accounts[5], 420013, {from: accounts[3], value: refundAmount} )
+    await bookLedger.verifiedDefense( accounts[3], accounts[5], 420013, {from: accounts[5], value: refundAmount} )
+
+    // Since Alice asked for the right amount back, we can now remove the book circulation.
+    await bookLedger.removeBook( accounts[5], 420013, false, {from: accounts[5]})
+
+    // Expected state Changes
+    let bookLedgerStateChanges = [{'var': 'ownerOf.b3', 'expect': accounts[5]}]
+    // Check state after done
+    await checkState([bookLedger], [bookLedgerStateChanges], accounts)
+  })
+
+
+  it('Should fail to return escrow to Lorelai when complaint from Alice with verified counter from Lorelai due to incorrect escrow amount and fail when Lorelai tries to confirm with correct amount.', async function () {
+    // accounts[5] = lorelai
+    // accounts[3] = Alice
+    // Add book for librarian
+    await bookLedger.newBook(accounts[5], 420013, 4, 'United States', 'Doubleday', 'Dan Simmons', 'Hyperion', {from: accounts[5]} )
+
+    // Alice request book from librarian
+    await bookLedger.requestBook( accounts[5], 420013, false, {from: accounts[3]} )
+
+    // confirm escrow amount set by librarian
+    let escrow = 1;
+    await bookLedger.commitBook( accounts[5], accounts[3], 420013, escrow, {from: accounts[5]} )
+
+    // confirm Alice meets escrow amount
+    await bookLedger.commitEscrow( accounts[5], accounts[3], 420013, {from: accounts[3], value: escrow} )
+
+    // confirm Librarian sent book by putting in transmission
+    await bookLedger.sendBook( accounts[5], accounts[3], 420013, {from: accounts[5]} )
+
+    // Alice reject Book
+    // Lorelai provide evidence (simply allow her to update a variable saying she has)
+    // Lorelai receive escrow, set her book to lost
+    // book is not archived as it can be considered lost in transmission
+    // let refundAmount = await bookLedger.bookEscrow( accounts[5], accounts[3], 420013 )
+
+
+    // Alice tries to receive more money than what she paid for the book. This fails
+    await expectRevert( bookLedger.rejectBook( accounts[3], accounts[5], 420013, {from: accounts[3], value: 100} ) )
+    await expectRevert( bookLedger.verifiedDefense( accounts[3], accounts[5], 420013, {from: accounts[5], value: 100} ) )
+
+    // Alice relize she wont be able to get any money back unless she complies with the original amount set
+    let refundAmount = await bookLedger.bookEscrow( accounts[5], accounts[3], 420013 )
+
+
+    // Lorelai tries to verify the right amount, but this fails because Alice still has not confirm the corecct amount. This then fails.
+    await expectRevert( bookLedger.verifiedDefense( accounts[3], accounts[5], 420013, {from: accounts[5], value: refundAmount} ) )
+
+
+    await bookLedger.rejectBook( accounts[3], accounts[5], 420013, {from: accounts[3], value: refundAmount} )
+    await bookLedger.verifiedDefense( accounts[3], accounts[5], 420013, {from: accounts[5], value: refundAmount} )
+
+    // Since Alice asked for the right amount back, we can now remove the book circulation.
+    await bookLedger.removeBook( accounts[5], 420013, false, {from: accounts[5]})
+
+    // Expected state Changes
+    let bookLedgerStateChanges = [{'var': 'ownerOf.b3', 'expect': accounts[5]}]
+    // Check state after done
+    await checkState([bookLedger], [bookLedgerStateChanges], accounts)
+  })
+
 
 })

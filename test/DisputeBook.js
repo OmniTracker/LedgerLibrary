@@ -33,7 +33,7 @@ contract('DisputeBook', async function (accounts) {
     await bookLedger.requestBook( accounts[5], 420013, false, {from: accounts[3]} )
 
     // confirm escrow amount set by librarian
-    let escrow = 300;
+    let escrow = 1;
     await bookLedger.commitBook( accounts[5], accounts[3], 420013, escrow, {from: accounts[5]} )
 
     // confirm Alice meets escrow amount
@@ -48,7 +48,7 @@ contract('DisputeBook', async function (accounts) {
     // or internally in rejectBook()?
     let refundAmount = await bookLedger.bookEscrow( accounts[5], accounts[3], 420013 )
     await bookLedger.rejectBook( accounts[3], accounts[5], 420013, {from: accounts[3], value: refundAmount} )
-    await bookLedger.rejectBook( accounts[3], accounts[5], 420013, {from: accounts[3], value: refundAmount} )
+    await bookLedger.verifiedDefense( accounts[3], accounts[5], 420013, {from: accounts[5], value: refundAmount} )
     await bookLedger.removeBook( accounts[5], 420013, false, {from: accounts[5]})
 
     // Expected state Changes
@@ -56,7 +56,7 @@ contract('DisputeBook', async function (accounts) {
     // Check state after done
     await checkState([bookLedger], [bookLedgerStateChanges], accounts)
   })
-  
+
 
   it('Should return escrow to Lorelai when complaint from Alice with verified counter from Lorelai.', async function () {
     // accounts[5] = lorelai
@@ -68,7 +68,7 @@ contract('DisputeBook', async function (accounts) {
     await bookLedger.requestBook( accounts[5], 420013, false, {from: accounts[3]} )
 
     // confirm escrow amount set by librarian
-    let escrow = 300;
+    let escrow = 1;
     await bookLedger.commitBook( accounts[5], accounts[3], 420013, escrow, {from: accounts[5]} )
 
     // confirm Alice meets escrow amount
@@ -84,7 +84,7 @@ contract('DisputeBook', async function (accounts) {
     let refundAmount = await bookLedger.bookEscrow( accounts[5], accounts[3], 420013 )
     await bookLedger.rejectBook( accounts[3], accounts[5], 420013, {from: accounts[3], value: refundAmount} )
     await bookLedger.verifiedDefense( accounts[3], accounts[5], 420013, {from: accounts[5], value: refundAmount} )
-    await bookLedger.removeBook( accounts[5], 420013, false, {from: accounts[5]})  
+    await bookLedger.removeBook( accounts[5], 420013, false, {from: accounts[5]})
 
     // Expected state Changes
     let bookLedgerStateChanges = [{'var': 'ownerOf.b3', 'expect': accounts[5]}]

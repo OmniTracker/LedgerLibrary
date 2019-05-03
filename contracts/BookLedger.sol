@@ -24,16 +24,16 @@ contract BookLedger is ERC721 {
 
   // index books by entity address and bookID
   mapping(address => mapping(uint256 => Book)) internal _books;
-  
+
   // _booksList contains a list of all books owned by an entity
   mapping(address => uint256[]) internal _booksList;
-  
+
   // _lostBooksList contains a mapping of all the lost books in universe
   mapping(address => mapping(uint256 => bool)) internal _lostBooksList;
 
   // boolean mapping of book requested
   mapping(address => mapping(address => mapping(uint256 => bool))) internal _request;
-  
+
   // boolean mapping for whether book will be loaned or traded
   mapping(address => mapping(address => mapping(uint256 => bool))) internal _trade;
 
@@ -62,7 +62,7 @@ contract BookLedger is ERC721 {
   uint256 public _minEscrow; // Set the min escrow number
   uint256 public _maxEscrow; // Limit the max escrow number
   uint256 public _delta;
-  
+
   constructor(
     address minter,
     uint256 minEscrow
@@ -80,7 +80,7 @@ contract BookLedger is ERC721 {
       require(_exists(bookID), "ERC721 token exists for book with specified ID does not exist.");
     _;
   }
-  
+
   struct Book {
     uint256 bookID;
     uint256 bookPointer;
@@ -134,11 +134,11 @@ contract BookLedger is ERC721 {
       _mint(owner, bookID);
 
       emit bookAdded(_books[owner][bookID].publisher, _books[owner][bookID].author, _books[owner][bookID].name);
-      
+
       return bookID;
    }
 
-   /** Public view functions for state and 
+   /** Public view functions for state and
     *  property of an entities book
     */
 
@@ -158,7 +158,7 @@ contract BookLedger is ERC721 {
     function isBookRequested ( address sender, address receiver, uint256 bookID )
     public exists(bookID) view returns(bool)
     { return _request[sender][receiver][bookID]; }
-    
+
     /** Check that the book is committed between two entities */
     function isBookCommitted ( address sender, address receiver, uint256 bookID )
     public exists(bookID) view returns(bool)
@@ -215,7 +215,7 @@ contract BookLedger is ERC721 {
      // update mapping for book being requested
      _request[owner][msg.sender][bookID] = true;
      _books[owner][bookID].requested = true;
-     
+
      emit bookRequested( owner, msg.sender, bookID);
    }
 
@@ -305,11 +305,11 @@ contract BookLedger is ERC721 {
 
       // book should be requested from owner to requester
       require(isBookRequested(owner, requester, bookID));
-      
+
       // both the current owner and new owner should have committed
       require(isBookCommitted(owner, requester, bookID));
       require(isBookCommitted(requester, owner, bookID));
-      
+
       // both the current owner and new owner should have not set the book in transmission
       require(!transmissionStatus(owner, requester, bookID));
       require(!transmissionStatus(requester, owner, bookID));
@@ -350,7 +350,7 @@ contract BookLedger is ERC721 {
 
       // get the address of the owner of the book
       address owner = ownerOf(bookID);
-      
+
       // book should still be committed between sender and receiver
       if ( receiver != owner ) {
 	  require(isBookCommitted(sender, receiver, bookID));
@@ -395,7 +395,7 @@ contract BookLedger is ERC721 {
 
       // book returned should be the one that was requested
       require(isBookRequested(owner, msg.sender, bookID));
-      
+
       // Book should not be committed or in transfer
       // no commit step necessary, simply check transmission status
       require(!isBookCommitted(owner, msg.sender, bookID));
@@ -420,7 +420,7 @@ contract BookLedger is ERC721 {
 
       // book archived should be the one that was requested
       require(isBookRequested(owner, requester, bookID));
-      
+
       // check the book is not available
       require(!isBookAvailable(owner, bookID));
 
@@ -454,13 +454,13 @@ contract BookLedger is ERC721 {
 
 	  // remove the book from the original Owner
 	  // as msg.sender is required to remove, must call via js file
-	  
+
 	  // reset trade mapping
 	  _trade[owner][requester][bookID] = false;
       }
     }
 
-    /** 
+    /**
      * Only allow verified users to receive escrow, note, does not update bookEscrow
      */
     function refundEscrow( address escrowHolder, address escrowPayable, uint256 bookID ) public payable {
@@ -498,8 +498,8 @@ contract BookLedger is ERC721 {
 
       // start a timer from when a complaint arrives
       if( _complaint[plaintiff][defendant][bookID] == false) {
-	  _timeout[plaintiff][defendant][bookID] = now + _delta;
-	  _complaint[plaintiff][defendant][bookID] = true;
+	       _timeout[plaintiff][defendant][bookID] = now + _delta;
+	        _complaint[plaintiff][defendant][bookID] = true;
       }
 
       emit startTimerForDefense( plaintiff, defendant, _timeout[plaintiff][defendant][bookID]);
@@ -512,15 +512,15 @@ contract BookLedger is ERC721 {
       // withdraw their deposit. The book should be destroyed
       // use js file to removeBook
       if(now > delta_now || _approvedUser[plaintiff][bookID] == true) {
-	  refundEscrow( plaintiff, plaintiff, bookID );
-	  delete (_bookEscrow[defendant][plaintiff][bookID]);
-	  _lostBooksList[owner][bookID] = true;
-	  _books[owner][bookID].availability = false;
+	       refundEscrow( plaintiff, plaintiff, bookID );
+	        delete (_bookEscrow[defendant][plaintiff][bookID]);
+	        _lostBooksList[owner][bookID] = true;
+	        _books[owner][bookID].availability = false;
       } else {
-	  emit deltaTimeNotElapsed(now, delta_now);
-	  // test case, after calling once, allow override to withdraw funds
-	  // this else statement should not be included in a final product!
-	  _approvedUser[plaintiff][bookID] = true;
+	       emit deltaTimeNotElapsed(now, delta_now);
+	       // test case, after calling once, allow override to withdraw funds
+	       // this else statement should not be included in a final product!
+	       _approvedUser[plaintiff][bookID] = true;
       }
     }
 
@@ -560,7 +560,7 @@ contract BookLedger is ERC721 {
       // but allow it to be remove if lost
       require(_books[owner][bookID].requested == false || _lostBooksList[owner][bookID] == true, "Book is still being read");
 
-      
+
       // remove book from book list by swapping with last element in list
       // and update swapped book's pointer in book mapping
       uint256 rowToDelete = _books[owner][bookID].bookPointer;
@@ -575,11 +575,11 @@ contract BookLedger is ERC721 {
 
       // if it not lost, then the user intended to remove it from their _books mapping
       if ( _lostBooksList[owner][bookID] != true && burn == false ) {
-	  delete ( _books[owner][bookID] );
+	       delete ( _books[owner][bookID] );
       }
-      
+
       if( burn ) {
-	  _burn(owner, bookID);
+	       _burn(owner, bookID);
       }
 
       return true;
@@ -593,7 +593,7 @@ contract BookLedger is ERC721 {
     {
       // check that the owner is the actual owner of the lost book
       require(owner == ownerOf(bookID));
-      
+
       // check that the book is currently lost
       require( _lostBooksList[owner][bookID] == true );
 
